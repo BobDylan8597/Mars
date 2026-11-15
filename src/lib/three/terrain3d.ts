@@ -131,7 +131,7 @@ export function drapedLine(f: TerrainFrame, cells: [number, number][], color: st
 }
 
 /** Text label sprite that keeps a constant on-screen size. */
-export function labelSprite(text: string, color = "#f2f2f2", px = 13, sub?: string) {
+export function labelSprite(text: string, color = "#f2f2f2", px = 13, sub?: string, scale = 0.0009) {
   const c = document.createElement("canvas");
   const dpr = 2, pad = 6;
   const g = c.getContext("2d")!;
@@ -153,7 +153,6 @@ export function labelSprite(text: string, color = "#f2f2f2", px = 13, sub?: stri
   tex.colorSpace = THREE.SRGBColorSpace;
   const mat = new THREE.SpriteMaterial({ map: tex, depthTest: false, sizeAttenuation: false, transparent: true });
   const s = new THREE.Sprite(mat);
-  const scale = 0.0009;
   s.scale.set((c.width / dpr) * scale, (c.height / dpr) * scale, 1);
   s.center.set(0, 0);
   s.renderOrder = 10;

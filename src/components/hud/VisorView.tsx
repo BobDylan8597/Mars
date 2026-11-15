@@ -129,18 +129,18 @@ export function VisorView({
     const dist = Math.hypot(tc.col - snap.col, tc.row - snap.row) * f.cell;
     const tp = pin(f, tc.col, tc.row, "#f0a37a", 12);
     overlay.add(tp.group);
-    const tl = labelSprite(target.name, "#f0a37a", 14, `${dist < 1000 ? dist.toFixed(0) + " m" : (dist / 1000).toFixed(2) + " km"}`);
+    const tl = labelSprite(target.name, "#f0a37a", 14, `${dist < 1000 ? dist.toFixed(0) + " m" : (dist / 1000).toFixed(2) + " km"}`, 0.0022);
     tl.position.copy(tp.top); overlay.add(tl);
     const b = latLonToCell(region.meta, BASE_SITE.lat, BASE_SITE.lon);
     const bp = pin(f, b.col, b.row, "#f2f2f2", 25);
     overlay.add(bp.group);
-    const bl = labelSprite("Base", "#f2f2f2", 13); bl.position.copy(bp.top); overlay.add(bl);
+    const bl = labelSprite("Base", "#f2f2f2", 13, undefined, 0.002); bl.position.copy(bp.top); overlay.add(bl);
     for (const s of shelters) {
       const d = Math.hypot(s.col - snap.col, s.row - snap.row) * f.cell;
       if (d > 1500) continue;
       const sp = pin(f, s.col, s.row, "#8fb8d8", 8);
       overlay.add(sp.group);
-      const sl = labelSprite("Shelter", "#b8d2e6", 12, `${d.toFixed(0)} m`); sl.position.copy(sp.top); overlay.add(sl);
+      const sl = labelSprite("Shelter", "#b8d2e6", 12, `${d.toFixed(0)} m`, 0.0019); sl.position.copy(sp.top); overlay.add(sl);
     }
     const el = wrap.current!;
     overlay.traverse((o) => { const m = (o as THREE.Mesh).material as LineMaterial | undefined; if (m && "resolution" in m) m.resolution.set(el.clientWidth, el.clientHeight); });
