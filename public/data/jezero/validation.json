@@ -1,0 +1,24 @@
+{
+  "n_waypoints": 194,
+  "sol_range": [
+    909,
+    1343
+  ],
+  "elevation_m": {
+    "mean_diff_dem_minus_rover": 0.012328850515476794,
+    "mae": 0.07601128350516145,
+    "std": 0.11378575814998027,
+    "n": 194
+  },
+  "slope_deg": {
+    "mean_diff_dem_minus_tilt": 0.20999684395463916,
+    "mae": 1.5680881610989694,
+    "corr": 0.9174745720635359,
+    "n": 194
+  },
+  "source": {
+    "waypoints": "https://mars.nasa.gov/mmgis-maps/M20/Layers/json/M20_waypoints.json",
+    "dem": "10.5066/P9REJ9JN"
+  },
+  "note": "Rover tilt is vehicle attitude (includes rocks under wheels); DEM slope is a 5 m-cell Horn estimate."
+}
