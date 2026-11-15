@@ -40,8 +40,8 @@ export interface SearchResult {
 }
 
 export const ROUTE_PROFILES: Record<"A" | "B" | "C", { name: string; weights: CostWeights }> = {
-  A: { name: "Shortest", weights: { wD: 1, wS: 0.15, wR: 0.1, wU: 0.1, wL: 0.1 } },
-  B: { name: "Safest / lowest O₂", weights: { wD: 1, wS: 6, wR: 3, wU: 3, wL: 3 } },
+  A: { name: "Shortest", weights: { wD: 1, wS: 0, wR: 0, wU: 0, wL: 0 } },
+  B: { name: "Safest / lowest O₂", weights: { wD: 1, wS: 12, wR: 4, wU: 3, wL: 3 } },
   C: { name: "Max science", weights: { wD: 1, wS: 2, wR: 1, wU: 1, wL: 1 } },
 };
 
@@ -112,8 +112,15 @@ export function findPath(
   const g = new Float64Array(n).fill(Infinity);
   const came = new Int32Array(n).fill(-1);
   const closed = new Uint8Array(n);
-  // admissible: every per-metre cost is >= wD
-  const hScale = algorithm === "astar" ? weights.wD * cellSize : 0;
+  // admissible and consistent: every step costs >= (minimum per-metre cost on the map) x length
+  let minPerM = Infinity;
+  if (algorithm === "astar") {
+    for (let i = 0; i < n; i++) {
+      const c = cellCostPerMetre(L, i, weights);
+      if (c < minPerM) minPerM = c;
+    }
+  }
+  const hScale = algorithm === "astar" && Number.isFinite(minPerM) ? minPerM * cellSize : 0;
   const gr = Math.floor(goal / w), gc = goal % w;
   const heur = (i: number) => {
     if (hScale === 0) return 0;
