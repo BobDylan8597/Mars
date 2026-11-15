@@ -93,6 +93,8 @@ export function Hud() {
   const [showChecklist, setShowChecklist] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
   const [refOpen, setRefOpen] = useState(false);
+  const [viewHeading, setViewHeading] = useState<number | null>(null);
+  const [lookReset, setLookReset] = useState(0);
   const marsTint = useMission((s) => s.marsTint);
 
   useEffect(() => {
@@ -157,6 +159,8 @@ export function Hud() {
         shelters={planner.env?.shelters ?? []}
         divertCells={live.diversion?.plan.cells ?? null}
         marsTint={marsTint}
+        onViewHeading={setViewHeading}
+        lookResetToken={lookReset}
       />
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 75% 70% at 50% 48%, transparent 55%, rgba(11,12,14,0.75) 85%, rgba(11,12,14,0.95) 100%)" }} />
 
@@ -166,7 +170,7 @@ export function Hud() {
       {/* top: compass + nav */}
       <div className="absolute inset-x-0 text-center" style={{ top: HEADER_H + 10 }}>
         {snap && nav && (
-          <CompassTape heading={snap.headingDeg} marks={[
+          <CompassTape heading={viewHeading ?? snap.headingDeg} marks={[
             { deg: nav.brgT, label: target.name, color: "#f0a37a" },
             ...(nav.shelter ? [{ deg: nav.shelter.brg, label: "Shelter", color: "#b8d2e6" }] : []),
           ]} />
@@ -180,6 +184,19 @@ export function Hud() {
         <div className="mt-1 flex justify-center gap-2 text-[11px]">
           <button onClick={() => { setShowChecklist((s) => !s); setShowAssistant(false); }} className="rounded bg-space/70 px-2 py-0.5 text-[#f0a37a] hover:bg-space/90">Sampling checklist</button>
           <button onClick={() => setRefOpen((s) => !s)} className="rounded bg-space/70 px-2 py-0.5 text-ink hover:bg-space/90">{showRef ? "Hide reference photos" : `Reference photos (${imgs.length})`}</button>
+        </div>
+        <div className="mt-1 flex items-center justify-center gap-2 text-[11px]">
+          <button
+            onClick={() => setTwin(twin.playing ? { playing: false } : { playing: true, driver: TAB_ID, progress: twin.progress >= 1 ? 0 : twin.progress })}
+            className="flex items-center gap-1 rounded bg-space/80 px-2.5 py-0.5 font-medium text-ink hover:bg-space/95"
+          >{twin.playing ? <Pause size={11} /> : <Play size={11} />}{twin.playing ? "Stop" : "Walk"}</button>
+          <div className="flex overflow-hidden rounded bg-space/70">
+            {([1, 5, 10] as const).map((v) => (
+              <button key={v} onClick={() => setTwin({ speed: v })} className={`px-1.5 py-0.5 ${twin.speed === v ? "bg-white/15 text-ink" : "text-muted hover:text-ink"}`}>{v}×</button>
+            ))}
+          </div>
+          <button onClick={() => setLookReset((n) => n + 1)} className="rounded bg-space/70 px-2 py-0.5 text-ink hover:bg-space/90">Look ahead</button>
+          <span className="rounded bg-space/50 px-1.5 py-0.5 text-ink/80">drag to look around</span>
         </div>
       </div>
 
