@@ -1,0 +1,145 @@
+<!doctype html><html lang="es"><head><meta charset="utf-8"><title>Mars Pathfinder — Propuesta</title>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;600&display=swap" rel="stylesheet">
+<style>
+@page { size: A4; margin: 16mm 15mm 16mm 15mm; }
+* { box-sizing: border-box; }
+body { font-family: 'IBM Plex Sans', Arial, sans-serif; font-size: 10.2pt; line-height: 1.45; color: #1d1d1f; margin: 0; }
+.cover { border-bottom: 3px solid #c2561f; padding-bottom: 10px; margin-bottom: 8px; }
+.kicker { font-size: 9pt; letter-spacing: .08em; text-transform: uppercase; color: #8a4a26; }
+h1 { font-size: 28pt; margin: 4px 0 2px; letter-spacing: .01em; }
+.sub { font-size: 12pt; color: #333; }
+.motto { font-size: 9pt; color: #777; margin-top: 4px; font-style: italic; }
+h2 { font-size: 13.5pt; color: #8a3d16; border-bottom: 1px solid #e6d9cc; padding-bottom: 2px; margin: 16px 0 6px; break-after: avoid; }
+p { margin: 5px 0; } ul { margin: 4px 0 6px 18px; padding: 0; } li { margin: 2px 0; }
+table { width: 100%; border-collapse: collapse; margin: 6px 0; font-size: 9pt; break-inside: avoid; }
+th, td { border-bottom: 1px solid #e5e5e5; padding: 3px 5px; text-align: left; vertical-align: top; }
+th { background: #f6efe8; font-weight: 600; }
+table.small { font-size: 8.4pt; }
+table.kv td:first-child { width: 24%; color: #666; }
+figure { margin: 8px 0; break-inside: avoid; }
+figure img, figure svg { width: 100%; border: 1px solid #ddd; border-radius: 3px; display: block; }
+figcaption { font-size: 8.4pt; color: #555; margin-top: 3px; }
+.two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; align-items: start; break-inside: avoid; }
+figure.narrow img { max-height: 120mm; width: auto; max-width: 100%; margin: 0 auto; }
+.note { font-size: 9pt; color: #333; }
+.refs { font-size: 8.8pt; margin-left: 18px; }
+.credit { font-size: 8pt; color: #777; }
+a { color: #8a3d16; }
+</style></head><body>
+<header class="cover">
+  <div class="kicker">NASA Space Apps Challenge 2026 · Managua</div>
+  <h1>Mars Pathfinder</h1>
+  <div class="sub">Planificación de caminatas (EVA) para exploradores humanos en Marte, sobre datos reales de la NASA</div>
+  <div class="motto">Explore with purpose · From orbital data to human discovery</div>
+</header>
+
+<h2>1. Identificación del proyecto</h2>
+<table class="kv">
+<tr><td>Proyecto</td><td>Mars Pathfinder</td></tr>
+<tr><td>Equipo</td><td>[Team name / Nombre del equipo]</td></tr>
+<tr><td>Integrantes</td><td>[Members / Integrantes]</td></tr>
+<tr><td>Reto oficial</td><td>Guía de supervivencia interplanetaria: Mapa de Marte</td></tr>
+<tr><td>Solución</td><td>Aplicación web con dos vistas sincronizadas: Mission Control (planificación) y Astronaut HUD (visor del casco)</td></tr>
+<tr><td>Enlaces</td><td>App: <a href="https://mars-beta-fawn.vercel.app">https://mars-beta-fawn.vercel.app</a><br/>Código: <a href="https://github.com/BobDylan8597/Mars">https://github.com/BobDylan8597/Mars</a><br/>Video: [Video link / Enlace al video]</td></tr>
+</table>
+
+<h2>2. Resumen de la propuesta</h2>
+<p>Mars Pathfinder convierte datos orbitales y de rovers de la NASA en un plan caminable para una EVA de unos 3 km en el cráter Jezero, y en un visor de casco que guía a la tripulación en la superficie. Sobre el modelo de terreno HiRISE de 1 m del USGS calcula pendientes, zonas transitables, tres rutas alternativas con A*, el consumo de oxígeno y el punto de no retorno (<i>Bingo O₂</i>), la cobertura de radio y los refugios topográficos. Su resultado principal es verificable: la pendiente que calcula coincide con la inclinación que registró el propio Perseverance en 194 paradas (error medio 1.57°, r = 0.92).</p>
+
+<h2>3. Problema y objetivos</h2>
+<p>Las herramientas existentes (Mars Trek, mapas del USGS) combinan capas a escala regional o global. Un astronauta con traje presurizado, carga y oxígeno limitado necesita decisiones a escala de metros: ¿qué pendiente puedo subir?, ¿me alcanza el oxígeno para volver?, ¿dónde pierdo la radio?, ¿dónde me refugio si llega un evento solar?</p>
+<p><b>Objetivo general:</b> crear una herramienta hiperlocal que una datos de varias misiones de la NASA para planificar y ejecutar una EVA segura y científicamente productiva.</p>
+<ul>
+<li>Usar solo datos reales y citados; separar siempre lo medido de lo modelado.</li>
+<li>Planificar rutas que respeten la movilidad con traje y el presupuesto de O₂.</li>
+<li>Dar a la tripulación en campo la información crítica, también sin señal de radio.</li>
+<li>Validar el modelo de terreno contra mediciones independientes.</li>
+</ul>
+
+<h2>4. Solución desarrollada</h2>
+<figure><svg viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg" font-family="IBM Plex Sans, Arial" font-size="11">
+<defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#666"/></marker></defs>
+<g fill="#f6f3ef" stroke="#c9b9a8">
+<rect x="8" y="14" width="190" height="222" rx="6"/><rect x="232" y="14" width="190" height="222" rx="6"/><rect x="456" y="14" width="296" height="104" rx="6"/><rect x="456" y="132" width="296" height="104" rx="6"/></g>
+<g fill="#222"><text x="18" y="34" font-weight="600">Datos NASA / USGS</text>
+<text x="18" y="56">USGS HiRISE DTM 1 m (DOI)</text><text x="18" y="74">USGS HiRISE orthoimage 25 cm</text><text x="18" y="92">Perseverance waypoints (MMGIS)</text><text x="18" y="110">Perseverance raw images (API)</text><text x="18" y="128">Curiosity waypoints + images</text><text x="18" y="146">RAD dose (Hassler 2014)</text><text x="18" y="164">Nature 2025 / NASA releases</text>
+<text x="18" y="196" fill="#666">Preparación (Python, 1 vez)</text><text x="18" y="212" fill="#666">scripts/data-prep/*.py</text>
+<text x="242" y="34" font-weight="600">Motor científico</text>
+<text x="242" y="56">Horn slope · roughness · U</text><text x="242" y="74">Traversability classes</text><text x="242" y="92">A* + Dijkstra check</text><text x="242" y="110">Pandolf → O₂ + Bingo</text><text x="242" y="128">Radio line of sight</text><text x="242" y="146">Shelters (sky blockage)</text><text x="242" y="164">Go/no-go rules · dose</text>
+<text x="242" y="196" fill="#666">24 pruebas automáticas</text><text x="242" y="212" fill="#666">src/lib/core · Web Worker</text>
+<text x="466" y="34" font-weight="600">Mission Control</text>
+<text x="466" y="56">Mapa 2D/3D y capas con procedencia</text><text x="466" y="74">Objetivos, SOI, rutas A/B/C</text><text x="466" y="92">Twin, clima, radio, refugios</text>
+<text x="466" y="152" font-weight="600">Astronaut HUD</text>
+<text x="466" y="174">Visor 3D a escala real + RA</text><text x="466" y="192">O₂, Bingo, terreno, ambiente</text><text x="466" y="210">Bitácora offline, emergencias</text></g>
+<g stroke="#666" stroke-width="1.4" fill="none" marker-end="url(#a)"><path d="M198 125 H230"/><path d="M422 70 H454"/><path d="M422 185 H454"/></g>
+<g stroke="#2e8b72" stroke-width="1.4" fill="none" marker-end="url(#a)"><path d="M600 118 V130"/><path d="M620 132 V120"/></g>
+<text x="628" y="128" font-size="10" fill="#2e8b72">sincronización entre pestañas</text>
+</svg><figcaption>Arquitectura: datos NASA/USGS → preparación → motor científico → dos vistas sincronizadas.</figcaption></figure>
+<p><b>Mission Control</b> (planificación en el hábitat): mapa del área de 4×4 km en 2D y 3D con capas de imagen, topografía, pendiente, rugosidad, transitabilidad, incertidumbre, sombra de radio y refugios, cada una con su insignia de procedencia; objetivos científicos ordenados por un Índice de Oportunidad Científica (SOI) ajustable; tres rutas (más corta, más segura, máxima ciencia) con perfil de elevación, pendiente y O₂; configurador de la EVA (carga, velocidad, pendiente máxima, tanque); reglas de clima previas a la EVA; y un Mission Twin que simula la caminata.</p>
+<p><b>Astronaut HUD</b> (visor del casco): el terreno real a escala verdadera visto desde 1.7 m en la posición del astronauta, con la ruta, el objetivo y los refugios superpuestos en su lugar; brújula que sigue la mirada; O₂, margen Bingo, inclinómetro y alertas; fotos reales de Perseverance como referencia al llegar; bitácora científica que guarda los registros en el traje cuando no hay radio y los sincroniza al recuperar la línea de vista; simulación de emergencias con desvío automático; y un asistente científico sin conexión que separa datos medidos, productos derivados e interpretación.</p>
+<p><b>Lo que la distingue:</b> cada número en pantalla lleva su fuente o la etiqueta de modelo/supuesto; la pendiente está validada contra el rover; y la planificación (Mission Control) y la ejecución (HUD) comparten el mismo estado, incluso sin conexión.</p>
+
+<h2>5. Metodología y recursos científicos</h2>
+<table class='small'><thead><tr><th>Dato</th><th>Fuente</th><th>Uso</th></tr></thead><tbody><tr><td>Modelo digital de terreno HiRISE, 1 m</td><td>USGS, Mars 2020 TRN, DOI 10.5066/P9REJ9JN (CC0)</td><td>Topografía, pendiente, rugosidad, rutas, línea de vista, refugios, 3D</td></tr><tr><td>Ortomosaico HiRISE, 25 cm</td><td>USGS, DOI 10.5066/P9QJDP48</td><td>Capa óptica y textura 3D</td></tr><tr><td>Waypoints de Perseverance</td><td>NASA MMGIS (M20_waypoints.json)</td><td>Ruta real del rover, posición de objetivos, validación con inclinación</td></tr><tr><td>Imágenes sin procesar de Perseverance</td><td>API Mars 2020 raw images (recurso oficial del reto)</td><td>Fotos de referencia en cada objetivo</td></tr><tr><td>Waypoints e imágenes de Curiosity</td><td>NASA MMGIS (MSL) + API de imágenes MSL</td><td>Ficha de las retículas del Monte Sharp (2025)</td></tr><tr><td>Hallazgos de Cheyava Falls</td><td>Hurowitz et al., Nature 645, 332 (2025)</td><td>Ficha científica</td></tr><tr><td>Hallazgos de Bunsen Peak</td><td>NASA, abril 2024</td><td>Ficha científica</td></tr><tr><td>Radiación en superficie</td><td>Curiosity RAD, Hassler et al., Science 343 (2014)</td><td>Presupuesto de dosis (medido en Gale)</td></tr><tr><td>Mars Trek, USGS, ruta de Curiosity, Worldview</td><td>Recursos oficiales del reto</td><td>Referencia de diseño y contexto; Worldview para el análogo terrestre</td></tr></tbody></table>
+<p><b>Preparación de datos.</b> El DTM (1.8 GB) y el ortomosaico (7.4 GB) del USGS se leen a distancia solo en la ventana de trabajo y se remuestrean a celdas de 5 m (800×800 = 640 000 celdas), corrigiendo la escala de la proyección equirectangular a 18.5° de latitud. Un área de contexto de 10 km a 20 m se usa solo para visualización.</p>
+<p><b>Métodos.</b> Pendiente por el método de Horn; rugosidad como residuo de un plano ajustado 3×3; índice de incertidumbre U según resolución, huecos y remuestreo (las celdas sin datos nunca se clasifican como seguras); rutas con A* sobre una función de costo multicriterio, verificadas con Dijkstra; consumo metabólico con la ecuación de Pandolf (1977) escalada a la gravedad de Marte (3.721 m/s², sin escalar el término basal) y O₂ a 20.1 kJ por litro; Bingo O₂ = O₂ restante ≤ 1.2 × O₂ necesario para volver; línea de vista de radio por trazado de rayos con curvatura de Marte; refugios por fracción de cielo bloqueada en 16 direcciones; y reglas de clima transparentes (no un pronóstico).</p>
+<p><b>Supuestos declarados:</b> masa del traje, penalización por traje presurizado y tamaño del tanque; puntajes del SOI asignados por el equipo; dosis RAD medida en Gale y aplicada a Jezero; base de operaciones elegida por el equipo sobre el DTM (no es un sitio de la NASA); tinte de color aproximado (la banda RED de HiRISE es monocromática); exageración vertical del 3D indicada en pantalla.</p>
+
+<h2>6. Desarrollo, resultados y evidencias</h2>
+<div class="two">
+<figure><img src="evidence/validation-es.svg"/><figcaption>Validación: pendiente del DEM frente a la inclinación registrada por Perseverance en 194 paradas (soles 909–1343). Es una comparación independiente: la inclinación viene de la unidad inercial del rover.</figcaption></figure>
+<div>
+<p><b>Validación del terreno.</b> En 194 paradas reales de Perseverance (soles 909–1343) comparamos la pendiente calculada sobre el DTM con la inclinación que midió el propio rover: el error medio es de 1.57° y la correlación r = 0.92. La inclinación del rover también refleja rocas bajo las ruedas, por lo que no se espera un acuerdo perfecto. La elevación coincide en centímetros, pero esa cifra no es independiente porque la localización del rover se apoya en el mismo terreno HiRISE.</p>
+</div></div>
+<p><b>Rutas a Cheyava Falls</b> (escenario por defecto: 15 kg de carga, 0.8 m/s, 60 min de trabajo científico, pendiente máxima 15°, 600 L de O₂ utilizable — supuesto):</p>
+<table><thead><tr><th>Ruta</th><th>Distancia (km)</th><th>Pendiente máx.</th><th>Pendiente media</th><th>Ascenso (m)</th><th>Ida (min)</th><th>O₂ EVA completa (L)</th><th>O₂ al volver</th></tr></thead><tbody><tr><td>A · Más corta</td><td>3.00</td><td>15.0°</td><td>6.2°</td><td>136</td><td>63</td><td>219 (37%)</td><td>63%</td></tr><tr><td>B · Más segura</td><td>3.19</td><td>12.9°</td><td>3.5°</td><td>113</td><td>67</td><td>220 (37%)</td><td>63%</td></tr><tr><td>C · Máxima ciencia (vía Bunsen Peak)</td><td>3.07</td><td>12.9°</td><td>4.1°</td><td>119</td><td>64</td><td>217 (36%)</td><td>64%</td></tr></tbody></table>
+<p class="note">La ruta segura es solo un 6% más larga y baja la pendiente media de 6.2° a 3.5° con casi el mismo oxígeno: la planificación mejora la seguridad sin costo de O₂. A* encontró el mismo costo óptimo que Dijkstra expandiendo 5 veces menos nodos en la ruta A (74 408 frente a 380 593).</p>
+<ul>
+<li>Radio: 44.1% del área queda en sombra de radio respecto a la antena de la base; Cheyava Falls, dentro del cañón de Neretva Vallis, está en sombra. Se identificaron 12 refugios topográficos.</li>
+<li>Flujo sin conexión probado de punta a punta en la versión publicada: un registro hecho en sombra de radio queda en cola y aparece en Mission Control al recuperar la señal.</li>
+<li>24 pruebas automáticas del motor (terreno, rutas, EVA, radio, refugios, asistente y datos reales).</li>
+</ul>
+<figure class=""><img src="evidence/mc-2d.jpg"/><figcaption>Mission Control: HiRISE (tinte aproximado), ruta real de Perseverance (punteada), rutas A/B/C, objetivos y tabla comparativa.</figcaption></figure>
+<div class="two">
+<figure class=""><img src="evidence/mc-3d.jpg"/><figcaption>Vista 3D sobre el DTM HiRISE (relieve ×2, indicado en pantalla).</figcaption></figure>
+<figure class=""><img src="evidence/mc-3d-hypso.jpg"/><figcaption>Colores por elevación (escala hipsométrica).</figcaption></figure>
+</div>
+<div class="two">
+<figure class=""><img src="evidence/hud-visor.jpg"/><figcaption>HUD: visor simulado a escala real en Neretva Vallis, con la ruta y los refugios superpuestos.</figcaption></figure>
+<figure class=""><img src="evidence/hud-target.jpg"/><figcaption>Al llegar: fotos reales de Perseverance en ese lugar como referencia; radio en sombra.</figcaption></figure>
+</div>
+<div class="two">
+<figure class=""><img src="evidence/hud-assistant.jpg"/><figcaption>Asistente científico: datos medidos, productos derivados e interpretación, en bloques separados.</figcaption></figure>
+<figure class=""><img src="evidence/hud-emergency.jpg"/><figcaption>Emergencia solar: desvío automático al refugio más cercano.</figcaption></figure>
+</div>
+<div class="two">
+<figure class=""><img src="evidence/mc-comm.jpg"/><figcaption>Sombra de radio (morado) y refugios topográficos.</figcaption></figure>
+<figure class="narrow"><img src="evidence/gale.jpg"/><figcaption>Ficha del ejemplo del reto: retículas del Monte Sharp con la ruta y fotos reales de Curiosity (2025).</figcaption></figure>
+</div>
+
+<h2>7. Impacto y proyección</h2>
+<ul>
+<li><b>Exploración humana:</b> planificación de EVAs y gestión de riesgos de soporte vital para Moon-to-Mars; el mismo método aplica a la Luna con sus DTM.</li>
+<li><b>Análogos terrestres:</b> campañas geológicas en terrenos volcánicos como Masaya o Cerro Negro (Nicaragua), con DTM locales y contexto de NASA Worldview.</li>
+<li><b>Educación e investigación:</b> une en una sola vista datos dispersos del PDS y muestra cómo distinguir medición, modelo e interpretación. Código abierto.</li>
+</ul>
+<p><b>Limitaciones y trabajo futuro:</b> un área de 4×4 km; rocas menores que la celda de 5 m no se detectan (próximo paso: detección sobre la ortoimagen de 25 cm); capas THEMIS y de geología del USGS no cargadas; modelo metabólico no validado para trajes presurizados; telemetría del traje y clima simulados; sin rutas en Gale por falta de DTM cargado; generalizar a cualquier sitio con DTM de HiRISE.</p>
+
+<h2>8. Referencias y herramientas utilizadas</h2>
+<ol class="refs">
+<li>Fergason, R. L. et al. (2020). Mars 2020 Terrain Relative Navigation HiRISE DTM Mosaic. USGS. doi:10.5066/P9REJ9JN</li>
+<li>USGS (2020). Mars 2020 Terrain Relative Navigation HiRISE Orthorectified Image Mosaic. doi:10.5066/P9QJDP48</li>
+<li>NASA/JPL-Caltech. Mars 2020 and MSL rover waypoints (MMGIS): mars.nasa.gov/mmgis-maps/M20/…, …/MSL/…</li>
+<li>NASA/JPL-Caltech. Mars 2020 raw images: mars.nasa.gov/mars2020/multimedia/raw-images/ · MSL raw images: mars.nasa.gov/msl/multimedia/raw-images/</li>
+<li>Hurowitz, J. A. et al. (2025). Redox-driven mineral and organic associations in Jezero Crater, Mars. <i>Nature</i> 645, 332.</li>
+<li>NASA (2024). Rock sampled by Perseverance embodies why rover came to Mars (Bunsen Peak).</li>
+<li>NASA (2025). Curiosity rover sees Martian “spiderwebs” up close; Curiosity blog, sols 4649–4654.</li>
+<li>Hassler, D. M. et al. (2014). Mars' surface radiation environment measured with the Mars Science Laboratory's Curiosity rover. <i>Science</i> 343.</li>
+<li>Pandolf, K. B., Givoni, B., Goldman, R. F. (1977). Predicting energy expenditure with loads while standing or walking very slowly. <i>J. Appl. Physiol.</i> 43(4).</li>
+<li>Horn, B. K. P. (1981). Hill shading and the reflectance map. <i>Proc. IEEE</i> 69(1).</li>
+<li>Recursos oficiales del reto: NASA Mars Trek; USGS Astrogeology interactive maps; NASA “Curiosity's proposed path up Mount Sharp”; NASA Worldview; Mars Perseverance raw image gallery.</li>
+</ol>
+<p><b>Herramientas:</b> Next.js, React, TypeScript, Tailwind CSS, Three.js, Recharts, Zustand, Vitest; Python (NumPy, rasterio/GDAL, Pillow); Vercel; GitHub.</p>
+<p><b>Uso de inteligencia artificial:</b> el equipo usó Claude Code (Anthropic) como asistente para diseñar, escribir código, revisar fuentes de datos y redactar la documentación. Las decisiones, la verificación de datos y los resultados fueron revisados por el equipo. La aplicación no ejecuta ningún modelo de IA: el asistente científico es una base de conocimiento curada que funciona sin conexión.</p>
+<p class="credit">Imágenes y datos: NASA/JPL-Caltech, Universidad de Arizona (HiRISE), USGS Astrogeology, MSSS. La NASA no respalda este proyecto.</p>
+</body></html>

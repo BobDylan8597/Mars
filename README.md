@@ -11,6 +11,8 @@ Mars Pathfinder is a hyperlocal planning and field tool for the first human expl
 
 > En español: herramienta de planificación hiperlocal para caminatas (EVA) en el cráter Jezero, construida sobre datos reales de NASA/USGS. Mission Control planifica la ruta y el presupuesto de oxígeno; el HUD del astronauta la sigue en la superficie.
 
+**Proposal (PDF):** [Español](https://mars-beta-fawn.vercel.app/docs/Mars-Pathfinder-Propuesta-ES.pdf) · [English](https://mars-beta-fawn.vercel.app/docs/Mars-Pathfinder-Propuesta-EN.pdf) · **Live app:** https://mars-beta-fawn.vercel.app
+
 ## Why it matters
 
 Global and regional tools (Mars Trek, USGS maps) are not built for the metre-scale decisions of a suited astronaut walking a few kilometres with limited oxygen. Mars Pathfinder works at that scale and keeps measured data, derived products and models clearly separated.
