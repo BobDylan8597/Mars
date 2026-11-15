@@ -11,6 +11,8 @@ import { EmergencyKind, TAB_ID, useMission } from "@/lib/store";
 import { usePlanner, useRegion } from "@/lib/useMissionData";
 import { useLive } from "@/lib/useLive";
 import { FieldLogForm } from "./FieldLogForm";
+import { ScienceAssistant } from "./ScienceAssistant";
+import type { AssistantContext } from "@/lib/data/knowledge";
 
 interface RoverImage {
   imageid: string; sol: number; instrument: string; mastAz: string; mastEl: string;
@@ -86,6 +88,7 @@ export function Hud() {
   const [images, setImages] = useState<Record<string, RoverImage[]>>({});
   const [imgIdx, setImgIdx] = useState(0);
   const [showChecklist, setShowChecklist] = useState(false);
+  const [showAssistant, setShowAssistant] = useState(false);
 
   useEffect(() => {
     fetch("/data/jezero/images.json").then((r) => r.json()).then((d) => setImages(d.targets)).catch(() => setImages({}));
@@ -127,6 +130,14 @@ export function Hud() {
   const doseSoFar = evaDose((snap?.elapsedMin ?? 0) / 60, atmos.solar === "sep" ? 10 : 1);
   const reticleOffset = nav && snap ? angDiff(nav.brgT, snap.headingDeg) : 999;
   const lowConfidence = snap && snap.uncertainty > 0.4;
+  const assistantCtx: AssistantContext = {
+    targetName: target.name,
+    slopeDeg: snap?.slopeDeg ?? null, uncertainty: snap?.uncertainty ?? null, roughness: snap?.roughness ?? null,
+    o2RemainingPct: snap?.o2RemainingPct ?? null, o2RateLmin: snap?.o2RateLmin ?? null, bingoMarginL: snap?.bingoMarginL ?? null,
+    remainingKm: snap ? snap.remainingM / 1000 : null, comm: losReady ? (snap?.comm ?? null) : null,
+    shelterM: nav?.shelter?.dist ?? null, shelterBrg: nav?.shelter?.brg ?? null, doseUSv: doseSoFar.equivalentUSv,
+    atmosLevel: atmo.level, atmosReasons: atmo.hits.map((h) => h.rule), tau: atmos.tau, ls: atmos.ls,
+  };
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-space">
@@ -167,6 +178,11 @@ export function Hud() {
           </div>
           <div className="mt-1 rounded bg-space/70 px-1.5 text-[11px] text-[#f0a37a]">{target.name} · tap for checklist</div>
         </button>
+      )}
+      {showAssistant && (
+        <div className="absolute left-1/2 z-10 -translate-x-1/2" style={{ top: HEADER_H + 80 }}>
+          <ScienceAssistant ctx={assistantCtx} onClose={() => setShowAssistant(false)} />
+        </div>
       )}
       {showChecklist && (
         <div className="panel absolute left-1/2 w-[380px] -translate-x-1/2 p-3 text-[12px]" style={{ top: HEADER_H + 80 }}>
@@ -249,6 +265,9 @@ export function Hud() {
           {online ? <RadioTower size={13} /> : <WifiOff size={13} />}
           {online ? "Radio line of sight to base" : commMode === "forced-offline" ? "Radio off (manual)" : !losReady ? "Checking radio line of sight…" : "Radio shadow — terrain blocks base"}
         </div>
+        <button onClick={() => { setShowAssistant((s) => !s); setShowChecklist(false); }} className="w-full rounded border border-ink/50 px-2 py-1.5 text-[12px] hover:bg-white/5">
+          {showAssistant ? "Close science assistant" : "Ask the science assistant"}
+        </button>
       </div>
 
       {/* bottom-left: tactical map */}
