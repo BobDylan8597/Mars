@@ -1,54 +1,21 @@
 "use client";
-import { useMemo } from "react";
-import { AlertTriangle, CheckCircle2, Loader2, Route, ShieldCheck } from "lucide-react";
+import { useMemo, useState } from "react";
+import { ChevronDown, Loader2 } from "lucide-react";
 import {
-  Area, CartesianGrid, ComposedChart, Legend, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
+  Area, CartesianGrid, ComposedChart, Line, ReferenceLine, ResponsiveContainer, Tooltip, XAxis, YAxis,
 } from "recharts";
 import type { Region } from "@/lib/data/region";
 import type { RoutePlan, ValidationRun } from "@/lib/plan";
+import { TARGETS } from "@/lib/data/targets";
 import { RouteKey, useMission } from "@/lib/store";
 import { ROUTE_COLORS } from "./MapCanvas";
 
-function Stat({ k, v, warn }: { k: string; v: string; warn?: boolean }) {
-  return (
-    <div className="flex justify-between text-[11px]">
-      <span className="text-muted">{k}</span>
-      <span className={`num ${warn ? "text-critical" : ""}`}>{v}</span>
-    </div>
-  );
-}
-
-function RouteCard({ r, selected, onClick }: { r: RoutePlan; selected: boolean; onClick: () => void }) {
+function status(r: RoutePlan) {
   const t = r.eva?.totals;
-  const ok = !!t && t.feasible && r.eva!.bingoIndex === -1;
-  return (
-    <button
-      onClick={onClick}
-      className={`flex-1 rounded-lg border p-2.5 text-left transition ${selected ? "bg-white/5" : "border-line hover:border-muted"}`}
-      style={selected ? { borderColor: ROUTE_COLORS[r.key] } : undefined}
-    >
-      <div className="mb-1.5 flex items-center justify-between">
-        <span className="text-xs font-semibold" style={{ color: ROUTE_COLORS[r.key] }}>Route {r.key} · {r.name}</span>
-        {t ? (ok ? <CheckCircle2 size={14} className="text-nominal" /> : <AlertTriangle size={14} className="text-critical" />) : null}
-      </div>
-      {t ? (
-        <div className="space-y-0.5">
-          <Stat k="Distance (one way)" v={`${(t.distanceM / 1000).toFixed(2)} km`} />
-          <Stat k="Max / mean slope" v={`${r.maxSlopeDeg.toFixed(1)}° / ${r.meanSlopeDeg.toFixed(1)}°`} />
-          <Stat k="Ascent / descent" v={`${t.ascentM.toFixed(0)} / ${t.descentM.toFixed(0)} m`} />
-          <Stat k="Walk out" v={`${t.outboundMin.toFixed(0)} min`} />
-          <Stat k="O₂ full EVA" v={`${t.totalO2L.toFixed(0)} L · ${t.tankPct.toFixed(1)}%`} warn={!t.feasible} />
-          <Stat k="O₂ margin at base" v={`${t.marginPct.toFixed(1)}%`} warn={!t.feasible} />
-          {r.stops.length > 0 && <Stat k="Science stops" v={r.stops.join(", ")} />}
-          <div className={`mt-1 text-[10px] font-semibold ${ok ? "text-nominal" : "text-critical"}`}>
-            {ok ? "WITHIN O₂ BUDGET (20% RESERVE)" : r.eva!.bingoIndex >= 0 ? "BINGO O₂ REACHED EN ROUTE" : "EXCEEDS O₂ BUDGET"}
-          </div>
-        </div>
-      ) : (
-        <div className="text-[11px] text-critical">No traversable route with current slope limit</div>
-      )}
-    </button>
-  );
+  if (!t) return { text: "No path", tone: "text-critical" };
+  if (r.eva!.bingoIndex >= 0) return { text: "Bingo O₂ en route", tone: "text-critical" };
+  if (!t.feasible) return { text: "Over O₂ budget", tone: "text-critical" };
+  return { text: "Within budget", tone: "text-nominal" };
 }
 
 export function PlannerPanel({
@@ -65,7 +32,10 @@ export function PlannerPanel({
   const setRoute = useMission((s) => s.setRoute);
   const eva = useMission((s) => s.eva);
   const sMax = useMission((s) => s.sMax);
+  const targetId = useMission((s) => s.targetId);
+  const [showProfile, setShowProfile] = useState(true);
   const sel = routes?.[selected];
+  const target = TARGETS.find((t) => t.id === targetId);
 
   const data = useMemo(() => {
     if (!sel?.eva) return [];
@@ -80,7 +50,7 @@ export function PlannerPanel({
         elev: +p.elevM[k].toFixed(1),
         slope: +(region.slope[i] || 0).toFixed(1),
         o2: +((p.o2RemainingL[k] / eva.tankL) * 100).toFixed(1),
-        ret: +(((1 + eva.reserve) * p.o2ReturnL[k]) / eva.tankL * 100).toFixed(1),
+        ret: +((((1 + eva.reserve) * p.o2ReturnL[k]) / eva.tankL) * 100).toFixed(1),
       });
     }
     return out;
@@ -88,76 +58,105 @@ export function PlannerPanel({
 
   const zMin = data.length ? Math.floor(Math.min(...data.map((d) => d.elev)) - 5) : 0;
   const zMax = data.length ? Math.ceil(Math.max(...data.map((d) => d.elev)) + 5) : 1;
+  const axis = { fill: "#8b9098", fontSize: 10, fontFamily: "var(--font-plex-mono)" };
 
   return (
-    <div className="panel space-y-3 p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold"><Route size={15} className="text-hud" /> Smart traverse planner · BASE-1 → target</div>
-        {computing && <span className="flex items-center gap-1 text-[11px] text-hud"><Loader2 size={12} className="animate-spin" /> computing A* on 640,000 cells…</span>}
-      </div>
-      <div className="flex flex-col gap-2 lg:flex-row">
-        {routes ? (["A", "B", "C"] as RouteKey[]).map((k) => (
-          <RouteCard key={k} r={routes[k]} selected={k === selected} onClick={() => setRoute(k)} />
-        )) : <div className="py-6 text-center text-xs text-muted">Loading terrain and computing routes…</div>}
+    <div className="panel flex max-h-full flex-col">
+      <div className="flex items-center gap-3 border-b border-line px-3 py-2">
+        <h2 className="font-semibold">Traverse planner</h2>
+        <span className="text-muted">Base → {target?.name}</span>
+        {computing && <span className="flex items-center gap-1 text-[11px] text-muted"><Loader2 size={12} className="animate-spin" /> recomputing</span>}
+        <button onClick={() => setShowProfile((s) => !s)} className="ml-auto flex items-center gap-1 text-[11px] text-muted hover:text-ink">
+          Profile <ChevronDown size={12} className={showProfile ? "rotate-180" : ""} />
+        </button>
       </div>
 
-      {data.length > 0 && (
-        <div>
-          <div className="label mb-1">Route {selected} profile · elevation, slope and O₂ remaining (outbound)</div>
-          <div className="h-56">
+      <div className="overflow-x-auto">
+        <table className="w-full min-w-[720px] text-[12px]">
+          <thead>
+            <tr className="text-left text-[11px] text-muted">
+              <th className="px-3 py-1.5 font-medium">Route</th>
+              <th className="px-2 font-medium">Distance</th>
+              <th className="px-2 font-medium">Max slope</th>
+              <th className="px-2 font-medium">Mean slope</th>
+              <th className="px-2 font-medium">Ascent</th>
+              <th className="px-2 font-medium">Walk out</th>
+              <th className="px-2 font-medium">O₂ full EVA</th>
+              <th className="px-2 font-medium">Left at base</th>
+              <th className="px-3 font-medium">Status</th>
+            </tr>
+          </thead>
+          <tbody className="num">
+            {routes ? (["A", "B", "C"] as RouteKey[]).map((k) => {
+              const r = routes[k], t = r.eva?.totals, st = status(r), on = k === selected;
+              return (
+                <tr key={k} onClick={() => setRoute(k)} className={`cursor-pointer border-t border-line/60 ${on ? "bg-white/[0.05]" : "hover:bg-white/[0.025]"}`}>
+                  <td className="px-3 py-1.5 font-sans">
+                    <span className="mr-2 inline-block h-0.5 w-4 align-middle" style={{ background: ROUTE_COLORS[k] }} />
+                    <span className={on ? "font-medium" : ""}>{k} · {r.name}</span>
+                    {r.stops.length > 0 && <span className="text-muted"> via {r.stops.join(", ")}</span>}
+                  </td>
+                  <td className="px-2">{t ? `${(t.distanceM / 1000).toFixed(2)} km` : "—"}</td>
+                  <td className="px-2">{t ? `${r.maxSlopeDeg.toFixed(1)}°` : "—"}</td>
+                  <td className="px-2">{t ? `${r.meanSlopeDeg.toFixed(1)}°` : "—"}</td>
+                  <td className="px-2">{t ? `${t.ascentM.toFixed(0)} m` : "—"}</td>
+                  <td className="px-2">{t ? `${t.outboundMin.toFixed(0)} min` : "—"}</td>
+                  <td className="px-2">{t ? `${t.totalO2L.toFixed(0)} L (${t.tankPct.toFixed(0)}%)` : "—"}</td>
+                  <td className="px-2">{t ? `${t.marginPct.toFixed(0)}%` : "—"}</td>
+                  <td className={`px-3 font-sans ${st.tone}`}>{st.text}</td>
+                </tr>
+              );
+            }) : (
+              <tr><td colSpan={9} className="px-3 py-3 text-muted">Computing routes on the HiRISE terrain…</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {showProfile && data.length > 0 && (
+        <div className="border-t border-line px-3 pb-2 pt-2">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] text-muted">
+            <span className="text-ink">Route {selected} profile</span>
+            <span><span className="mr-1 inline-block h-2 w-3 bg-[#8b9098]/40 align-middle" />elevation (m, left)</span>
+            <span><span className="mr-1 inline-block h-0.5 w-3 bg-[#d3a24a] align-middle" />slope °</span>
+            <span><span className="mr-1 inline-block h-0.5 w-3 bg-[#8fb8d8] align-middle" />O₂ remaining %</span>
+            <span><span className="mr-1 inline-block h-0.5 w-3 border-t border-dashed border-[#d0584c] align-middle" />O₂ needed to return + 20 % — Bingo where they cross</span>
+          </div>
+          <div className="h-40">
             <ResponsiveContainer width="100%" height="100%">
-              <ComposedChart data={data} margin={{ top: 5, right: 8, bottom: 0, left: -8 }}>
-                <CartesianGrid stroke="#1e293b" strokeDasharray="3 3" />
-                <XAxis dataKey="km" type="number" domain={[0, "dataMax"]} tick={{ fill: "#94a3b8", fontSize: 10 }} unit=" km" />
-                <YAxis yAxisId="z" domain={[zMin, zMax]} tick={{ fill: "#94a3b8", fontSize: 10 }} unit=" m" width={62} />
-                <YAxis yAxisId="p" orientation="right" domain={[0, 100]} tick={{ fill: "#94a3b8", fontSize: 10 }} width={34} />
+              <ComposedChart data={data} margin={{ top: 6, right: 4, bottom: 0, left: -6 }}>
+                <CartesianGrid stroke="#2a2d33" vertical={false} />
+                <XAxis dataKey="km" type="number" domain={[0, "dataMax"]} tick={axis} tickLine={false} axisLine={{ stroke: "#2a2d33" }} unit=" km" />
+                <YAxis yAxisId="z" domain={[zMin, zMax]} tick={axis} tickLine={false} axisLine={false} width={52} />
+                <YAxis yAxisId="p" orientation="right" domain={[0, 100]} tick={axis} tickLine={false} axisLine={false} width={30} />
                 <Tooltip
-                  contentStyle={{ background: "#0F172A", border: "1px solid #1e293b", fontSize: 11 }}
+                  contentStyle={{ background: "#1b1d21", border: "1px solid #2a2d33", borderRadius: 4, fontSize: 11 }}
                   labelFormatter={(v) => `${v} km`}
                 />
-                <Legend wrapperStyle={{ fontSize: 10 }} />
-                <Area yAxisId="z" dataKey="elev" name="Elevation (m)" stroke="#94a3b8" fill="#94a3b8" fillOpacity={0.15} dot={false} isAnimationActive={false} />
-                <Line yAxisId="p" dataKey="slope" name="Slope (°)" stroke="#F59E0B" dot={false} strokeWidth={1} isAnimationActive={false} />
-                <Line yAxisId="p" dataKey="o2" name="O₂ remaining (%)" stroke="#00F0FF" dot={false} strokeWidth={2} isAnimationActive={false} />
-                <Line yAxisId="p" dataKey="ret" name="O₂ to return +20% (%)" stroke="#EF4444" strokeDasharray="4 3" dot={false} strokeWidth={1.5} isAnimationActive={false} />
-                <ReferenceLine yAxisId="p" y={sMax} stroke="#F59E0B" strokeDasharray="2 4" label={{ value: `Smax ${sMax}°`, fill: "#F59E0B", fontSize: 9, position: "insideTopLeft" }} />
+                <Area yAxisId="z" dataKey="elev" name="Elevation (m)" stroke="#8b9098" strokeWidth={1} fill="#8b9098" fillOpacity={0.18} dot={false} isAnimationActive={false} />
+                <Line yAxisId="p" dataKey="slope" name="Slope (°)" stroke="#d3a24a" dot={false} strokeWidth={1} isAnimationActive={false} />
+                <Line yAxisId="p" dataKey="o2" name="O₂ remaining (%)" stroke="#8fb8d8" dot={false} strokeWidth={1.75} isAnimationActive={false} />
+                <Line yAxisId="p" dataKey="ret" name="O₂ to return +20% (%)" stroke="#d0584c" strokeDasharray="4 3" dot={false} strokeWidth={1.25} isAnimationActive={false} />
+                <ReferenceLine yAxisId="p" y={sMax} stroke="#d3a24a" strokeOpacity={0.5} strokeDasharray="2 4" />
               </ComposedChart>
             </ResponsiveContainer>
           </div>
-          <p className="text-[10px] text-muted">
-            Bingo O₂ triggers where the cyan line meets the red line. Return assumed along the same route. Terrain factor η = 1 + 0.3·roughness (proxy; loose-sand factor needs THEMIS).
-          </p>
         </div>
       )}
 
-      <div className="rounded-md border border-line bg-space/50 p-2">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2 text-xs font-semibold"><ShieldCheck size={14} className="text-nominal" /> Optimality check: A* vs. Dijkstra</div>
-          <button
-            onClick={onVerify}
-            disabled={verifying || !routes}
-            className="rounded border border-hud/50 px-2 py-0.5 text-[11px] text-hud hover:bg-hud/10 disabled:opacity-40"
-          >
-            {verifying ? "Running…" : "Run check"}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-1 border-t border-line px-3 py-1.5 text-[11px] text-muted">
+        <span>Optimality check (A* vs. Dijkstra, same cost surface):</span>
+        {verification ? verification.map((v) => (
+          <span key={v.key} className="num">
+            {v.key}: A* {v.astar.expanded.toLocaleString()} nodes / {v.astar.ms.toFixed(0)} ms · Dijkstra {v.dijkstra.expanded.toLocaleString()} / {v.dijkstra.ms.toFixed(0)} ms ·{" "}
+            <span className={v.sameCost ? "text-nominal" : "text-critical"}>{v.sameCost ? "same cost ✓" : "cost differs"}</span>
+          </span>
+        )) : (
+          <button onClick={onVerify} disabled={verifying || !routes} className="rounded border border-line px-2 py-0.5 text-ink hover:bg-white/5 disabled:opacity-40">
+            {verifying ? "Running…" : "Run"}
           </button>
-        </div>
-        {verification && (
-          <table className="num mt-2 w-full text-[11px]">
-            <thead className="text-muted"><tr><th className="text-left">Route</th><th>A* nodes</th><th>A* ms</th><th>Dijkstra nodes</th><th>Dijkstra ms</th><th>Same cost</th></tr></thead>
-            <tbody>
-              {verification.map((v) => (
-                <tr key={v.key} className="text-center">
-                  <td className="text-left" style={{ color: ROUTE_COLORS[v.key] }}>{v.key}</td>
-                  <td>{v.astar.expanded.toLocaleString()}</td>
-                  <td>{v.astar.ms.toFixed(0)}</td>
-                  <td>{v.dijkstra.expanded.toLocaleString()}</td>
-                  <td>{v.dijkstra.ms.toFixed(0)}</td>
-                  <td className={v.sameCost ? "text-nominal" : "text-critical"}>{v.sameCost ? "✓ optimal" : "✗"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         )}
+        <span className="ml-auto text-faint">Return along the same route · η = 1 + 0.3·roughness (sand factor needs THEMIS)</span>
       </div>
     </div>
   );

@@ -29,11 +29,11 @@ export interface MissionState {
 
 export const DEFAULT_LAYERS: Record<LayerId, LayerState> = {
   ortho: { visible: true, opacity: 1 },
-  hillshade: { visible: true, opacity: 0.35 },
+  hillshade: { visible: true, opacity: 0.25 },
   elevation: { visible: false, opacity: 0.55 },
   slope: { visible: false, opacity: 0.6 },
   roughness: { visible: false, opacity: 0.6 },
-  classes: { visible: true, opacity: 0.35 },
+  classes: { visible: false, opacity: 0.5 },
   uncertainty: { visible: false, opacity: 0.6 },
   rover: { visible: true, opacity: 1 },
   routes: { visible: true, opacity: 1 },
@@ -60,7 +60,7 @@ export const useMission = create<MissionState>()(
       setLayer: (id, p) => set({ layers: { ...get().layers, [id]: { ...get().layers[id], ...p } } }),
       approvePlan: () => set({ approvedPlan: { route: get().selectedRoute, targetId: get().targetId, at: new Date().toISOString() } }),
     }),
-    { name: "mars-pathfinder-mission", version: 1 },
+    { name: "mars-pathfinder-mission-v2", version: 2 },
   ),
 );
 

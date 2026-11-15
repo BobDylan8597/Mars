@@ -1,44 +1,46 @@
 @import "tailwindcss";
 
+/* Neutral cartographic palette: data carries the colour, chrome stays grey. */
 @theme {
-  --color-space: #07090e;
-  --color-panel: #0f172a;
-  --color-panel-2: #131c31;
-  --color-line: #1e293b;
-  --color-mars: #ff5722;
-  --color-hud: #00f0ff;
-  --color-nominal: #10b981;
-  --color-caution: #f59e0b;
-  --color-critical: #ef4444;
-  --color-ink: #e2e8f0;
-  --color-muted: #94a3b8;
-  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+  --color-space: #0b0c0e;
+  --color-panel: #141518;
+  --color-panel-2: #1b1d21;
+  --color-line: #2a2d33;
+  --color-ink: #d9dbdf;
+  --color-muted: #8b9098;
+  --color-faint: #5d626b;
+  --color-mars: #d0652f;
+  --color-hud: #8fb8d8;
+  --color-nominal: #6fae8b;
+  --color-caution: #d3a24a;
+  --color-critical: #d0584c;
+  --font-sans: var(--font-plex-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
 }
 
 html, body {
   background: var(--color-space);
   color: var(--color-ink);
+  height: 100%;
 }
 
-body { font-family: var(--font-sans); }
+body { font-family: var(--font-sans); font-size: 13px; }
 
 .num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; }
 
 .panel {
-  background: var(--color-panel);
+  background: rgba(20, 21, 24, 0.96);
   border: 1px solid var(--color-line);
-  border-radius: 10px;
+  border-radius: 4px;
 }
 
 .label {
-  font-size: 10px;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
+  font-size: 11px;
   color: var(--color-muted);
+  font-weight: 500;
 }
 
-input[type="range"] { accent-color: var(--color-mars); width: 100%; }
+input[type="range"] { accent-color: #9aa0a8; width: 100%; height: 14px; }
 
-::-webkit-scrollbar { width: 8px; height: 8px; }
-::-webkit-scrollbar-thumb { background: #1e293b; border-radius: 8px; }
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-thumb { background: #2a2d33; border-radius: 3px; }

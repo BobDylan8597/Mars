@@ -27,17 +27,19 @@ function toImage(w: number, h: number, fn: (i: number) => [number, number, numbe
 }
 
 export const ELEVATION_RAMP: [number, RGB][] = [
-  [0, [30, 41, 120]], [0.25, [24, 140, 160]], [0.5, [120, 190, 90]], [0.75, [235, 190, 70]], [1, [240, 90, 50]],
+  // viridis
+  [0, [68, 1, 84]], [0.25, [59, 82, 139]], [0.5, [33, 145, 140]], [0.75, [94, 201, 98]], [1, [253, 231, 37]],
 ];
 export const SLOPE_RAMP: [number, RGB][] = [
-  [0, [16, 185, 129]], [6, [132, 204, 22]], [12, [245, 158, 11]], [18, [239, 68, 68]], [30, [127, 29, 29]],
+  // sequential YlOrRd, degrees
+  [0, [255, 255, 204]], [6, [254, 217, 118]], [12, [253, 141, 60]], [18, [227, 26, 28]], [30, [128, 0, 38]],
 ];
 export const CLASS_COLORS: Record<number, [number, number, number, number]> = {
   [TerrainClass.LOW_COST]: [16, 185, 129, 0],
-  [TerrainClass.MODERATE_COST]: [245, 158, 11, 90],
-  [TerrainClass.HIGH_COST]: [249, 115, 22, 150],
-  [TerrainClass.EXCLUDED]: [239, 68, 68, 220],
-  [TerrainClass.INSUFFICIENT_DATA]: [139, 92, 246, 220],
+  [TerrainClass.MODERATE_COST]: [211, 162, 74, 70],
+  [TerrainClass.HIGH_COST]: [208, 120, 60, 140],
+  [TerrainClass.EXCLUDED]: [200, 70, 60, 210],
+  [TerrainClass.INSUFFICIENT_DATA]: [120, 110, 150, 210],
 };
 
 export function hillshade(region: Region): ImageData {

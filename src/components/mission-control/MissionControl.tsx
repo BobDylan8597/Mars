@@ -1,116 +1,119 @@
 "use client";
-import { useState } from "react";
-import { Activity, Compass, Loader2, Satellite } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Loader2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
-import { DEM_PROVENANCE, ROVER_PROVENANCE } from "@/lib/data/targets";
+import { DEM_PROVENANCE } from "@/lib/data/targets";
 import { usePlanner, useRegion } from "@/lib/useMissionData";
-import { useMission } from "@/lib/store";
 import { EvaConfig } from "./EvaConfig";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas } from "./MapCanvas";
 import { PlannerPanel } from "./PlannerPanel";
 import { TargetPanel } from "./TargetPanel";
 
-function Kpi({ label, value, sub, tone = "text-ink" }: { label: string; value: string; sub?: string; tone?: string }) {
-  return (
-    <div className="panel min-w-0 px-3 py-2">
-      <div className="label truncate">{label}</div>
-      <div className={`num text-lg font-semibold leading-6 ${tone}`}>{value}</div>
-      {sub && <div className="truncate text-[10px] text-muted">{sub}</div>}
-    </div>
-  );
-}
+const TABS = [
+  { id: "layers", label: "Layers" },
+  { id: "targets", label: "Targets" },
+  { id: "eva", label: "EVA" },
+] as const;
+type Tab = (typeof TABS)[number]["id"];
+
+const HEADER_H = 44;
+const SIDE_W = 340;
+const GAP = 10;
 
 export function MissionControl() {
   const { region, error } = useRegion();
   const planner = usePlanner();
-  const selected = useMission((s) => s.selectedRoute);
-  const [tab, setTab] = useState<"science" | "eva">("science");
+  const [tab, setTab] = useState<Tab>("targets");
+  const [sideOpen, setSideOpen] = useState(true);
+  const plannerRef = useRef<HTMLDivElement>(null);
+  const [plannerH, setPlannerH] = useState(260);
+
+  useEffect(() => {
+    const el = plannerRef.current;
+    if (!el) return;
+    const ro = new ResizeObserver(([e]) => setPlannerH(e.contentRect.height));
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [region]);
 
   if (error) return <div className="p-8 text-critical">Failed to load terrain data: {error}</div>;
   if (!region) {
     return (
       <div className="flex h-screen items-center justify-center gap-2 text-muted">
-        <Loader2 className="animate-spin" size={18} /> Loading HiRISE terrain for Jezero crater…
+        <Loader2 className="animate-spin" size={16} /> Loading HiRISE terrain for Jezero crater…
       </div>
     );
   }
 
-  const v = region.validation;
-  const sel = planner.plan?.routes[selected];
-  const t = sel?.eva?.totals;
-  const areaKm2 = ((region.grid.width * region.grid.cellSize) / 1000) * ((region.grid.height * region.grid.cellSize) / 1000);
+  const left = sideOpen ? SIDE_W + GAP * 2 : GAP;
 
   return (
-    <div className="flex min-h-screen flex-col">
-      <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-line bg-panel/80 px-4 py-2.5">
-        <div className="flex items-center gap-2">
-          <Compass className="text-mars" size={22} />
-          <div>
-            <div className="text-sm font-bold tracking-[0.18em]">MARS PATHFINDER</div>
-            <div className="text-[10px] tracking-[0.2em] text-muted">EXPLORE WITH PURPOSE · FROM ORBITAL DATA TO HUMAN DISCOVERY</div>
-          </div>
+    <div className="relative h-screen w-screen overflow-hidden">
+      <MapCanvas
+        region={region}
+        classes={planner.plan?.classes ?? null}
+        routes={planner.plan?.routes ?? null}
+        inset={{ top: HEADER_H + GAP, right: GAP, bottom: plannerH + GAP * 2, left }}
+      />
+
+      <header className="absolute inset-x-0 top-0 flex items-center gap-4 border-b border-line bg-space/92 px-4" style={{ height: HEADER_H }}>
+        <div className="flex items-baseline gap-2">
+          <span className="font-semibold tracking-wide">Mars Pathfinder</span>
+          <span className="text-muted">EVA planning</span>
         </div>
-        <nav className="flex items-center gap-1 text-xs">
-          <span className="rounded-md bg-mars/15 px-3 py-1 font-semibold text-mars">Mission Control</span>
+        <span className="h-4 w-px bg-line" />
+        <nav className="flex items-center gap-4 text-[12px]">
+          <span className="border-b border-ink pb-0.5 text-ink">Mission Control</span>
         </nav>
-        <div className="ml-auto flex items-center gap-3 text-[11px] text-muted">
-          <Satellite size={14} className="text-hud" />
-          <span>Jezero crater · 18.49°N 77.32°E · HiRISE DTM 1 m → 5 m grid</span>
+        <div className="ml-auto flex items-center gap-2 text-[12px] text-muted">
+          <span>Jezero crater, western floor · 18.49°N 77.32°E</span>
           <ProvenanceBadge p={DEM_PROVENANCE} />
         </div>
       </header>
 
-      <div className="grid grid-cols-2 gap-2 px-3 pt-3 md:grid-cols-4 xl:grid-cols-8">
-        <Kpi label="Map area (HiRISE 1 m)" value={`${areaKm2.toFixed(0)} km²`} sub={`${(region.meta.valid_fraction * 100).toFixed(1)}% data coverage`} />
-        <Kpi label="Slope vs. rover tilt" value={`±${v.slope_deg.mae.toFixed(2)}°`} sub={`MAE · r = ${v.slope_deg.corr.toFixed(2)} · ${v.slope_deg.n} stops`} tone="text-nominal" />
-        <Kpi label="Rover sols on map" value={`${v.sol_range[0]}–${v.sol_range[1]}`} sub="Perseverance waypoints" />
-        <Kpi label="Route distance" value={t ? `${(t.distanceM / 1000).toFixed(2)} km` : "—"} sub={`Route ${selected}, one way`} />
-        <Kpi label="Max slope on route" value={sel ? `${sel.maxSlopeDeg.toFixed(1)}°` : "—"} sub={`Mean ${sel ? sel.meanSlopeDeg.toFixed(1) : "—"}°`} />
-        <Kpi label="Ascent" value={t ? `${t.ascentM.toFixed(0)} m` : "—"} sub="Cumulative, outbound" />
-        <Kpi label="O₂ full EVA" value={t ? `${t.tankPct.toFixed(1)}%` : "—"} sub="Out + science + return" tone={t && !t.feasible ? "text-critical" : "text-hud"} />
-        <Kpi label="Avg metabolic rate" value={t ? `${t.avgMetabolicW.toFixed(0)} W` : "—"} sub="Per astronaut, walking" />
-      </div>
-
-      <main className="grid flex-1 grid-cols-1 gap-3 p-3 xl:grid-cols-[260px_minmax(0,1fr)_360px]">
-        <aside className="order-2 max-h-[calc(100vh-170px)] overflow-y-auto xl:order-1">
-          <LayerPanel classShare={planner.plan?.classShare ?? null} />
-        </aside>
-
-        <section className="order-1 flex min-w-0 flex-col gap-3 xl:order-2">
-          <div className="h-[58vh] min-h-[380px]">
-            <MapCanvas region={region} classes={planner.plan?.classes ?? null} routes={planner.plan?.routes ?? null} />
-          </div>
-          {planner.error && <div className="panel p-2 text-xs text-critical">Planner error: {planner.error}</div>}
-          <PlannerPanel
-            region={region}
-            routes={planner.plan?.routes ?? null}
-            computing={planner.computing}
-            verification={planner.verification}
-            verifying={planner.verifying}
-            onVerify={planner.verify}
-          />
-          <div className="panel p-3 text-[11px] leading-5 text-muted">
-            <div className="mb-1 flex items-center gap-2 text-xs font-semibold text-ink"><Activity size={14} className="text-nominal" /> Terrain validation against Perseverance</div>
-            DEM slope at {v.slope_deg.n} rover stops (sols {v.sol_range[0]}–{v.sol_range[1]}) vs. the tilt recorded by the rover:
-            mean absolute error <span className="num text-ink">{v.slope_deg.mae.toFixed(2)}°</span>, correlation <span className="num text-ink">{v.slope_deg.corr.toFixed(2)}</span>.
-            Rover tilt includes rocks under the wheels, so perfect agreement is not expected. Elevation differs by
-            <span className="num text-ink"> {v.elevation_m.mae.toFixed(2)} m</span> on average, but rover localisation is itself tied to HiRISE terrain, so that figure is not an independent check.
-            <span className="ml-1 inline-block align-middle"><ProvenanceBadge p={ROVER_PROVENANCE} compact /></span>
-          </div>
-        </section>
-
-        <aside className="order-3 max-h-[calc(100vh-170px)] space-y-3 overflow-y-auto">
-          <div className="flex gap-1 rounded-lg border border-line p-1 text-xs">
-            {(["science", "eva"] as const).map((k) => (
-              <button key={k} onClick={() => setTab(k)} className={`flex-1 rounded-md py-1.5 ${tab === k ? "bg-mars/15 font-semibold text-mars" : "text-muted hover:text-ink"}`}>
-                {k === "science" ? "Science targets" : "EVA configuration"}
+      {sideOpen ? (
+        <aside className="panel absolute flex flex-col" style={{ top: HEADER_H + GAP, left: GAP, width: SIDE_W, bottom: GAP }}>
+          <div className="flex items-center border-b border-line px-1">
+            {TABS.map((t) => (
+              <button
+                key={t.id}
+                onClick={() => setTab(t.id)}
+                className={`px-3 py-2 text-[12px] ${tab === t.id ? "border-b border-ink text-ink" : "text-muted hover:text-ink"}`}
+              >
+                {t.label}
               </button>
             ))}
+            <button onClick={() => setSideOpen(false)} className="ml-auto p-2 text-muted hover:text-ink" aria-label="Collapse panel"><PanelLeftClose size={15} /></button>
           </div>
-          {tab === "science" ? <TargetPanel /> : <EvaConfig />}
+          <div className="flex-1 overflow-y-auto px-3 py-3">
+            {tab === "layers" && <LayerPanel region={region} classShare={planner.plan?.classShare ?? null} />}
+            {tab === "targets" && <TargetPanel />}
+            {tab === "eva" && <EvaConfig />}
+          </div>
         </aside>
-      </main>
+      ) : (
+        <button
+          onClick={() => setSideOpen(true)}
+          className="panel absolute p-2 text-muted hover:text-ink"
+          style={{ top: HEADER_H + GAP, left: GAP }}
+          aria-label="Open panel"
+        >
+          <PanelLeftOpen size={15} />
+        </button>
+      )}
+
+      <div ref={plannerRef} className="absolute" style={{ left, right: GAP, bottom: GAP, maxHeight: "48vh" }}>
+        {planner.error && <div className="panel mb-2 px-3 py-1.5 text-[12px] text-critical">Planner error: {planner.error}</div>}
+        <PlannerPanel
+          region={region}
+          routes={planner.plan?.routes ?? null}
+          computing={planner.computing}
+          verification={planner.verification}
+          verifying={planner.verifying}
+          onVerify={planner.verify}
+        />
+      </div>
     </div>
   );
 }

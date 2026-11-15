@@ -1,19 +1,32 @@
 "use client";
-import { Backpack, RotateCcw } from "lucide-react";
 import { DEFAULT_EVA, EvaParams, metabolicRateW, o2LitresPerMin } from "@/lib/core/eva";
 import { useMission } from "@/lib/store";
 
-type Field = { key: keyof EvaParams; label: string; min: number; max: number; step: number; unit: string; tag?: "ASSUMPTION" };
+type Field = { key: keyof EvaParams; label: string; min: number; max: number; step: number; unit: string; assumption?: boolean };
 
 const FIELDS: Field[] = [
-  { key: "loadKg", label: "Carried tools & samples", min: 5, max: 40, step: 1, unit: "kg" },
+  { key: "loadKg", label: "Tools and samples carried", min: 5, max: 40, step: 1, unit: "kg" },
   { key: "speedMs", label: "Walking speed", min: 0.3, max: 1.4, step: 0.05, unit: "m/s" },
   { key: "obsMin", label: "Science time at target", min: 10, max: 180, step: 5, unit: "min" },
-  { key: "bodyMassKg", label: "Astronaut body mass", min: 50, max: 110, step: 1, unit: "kg" },
-  { key: "suitMassKg", label: "Suit + PLSS mass", min: 30, max: 130, step: 1, unit: "kg", tag: "ASSUMPTION" },
-  { key: "kSuit", label: "Pressurised-suit penalty", min: 1, max: 1.6, step: 0.05, unit: "×", tag: "ASSUMPTION" },
-  { key: "tankL", label: "Usable O₂ per astronaut", min: 150, max: 900, step: 10, unit: "L", tag: "ASSUMPTION" },
+  { key: "bodyMassKg", label: "Body mass", min: 50, max: 110, step: 1, unit: "kg" },
+  { key: "suitMassKg", label: "Suit + life-support pack", min: 30, max: 130, step: 1, unit: "kg", assumption: true },
+  { key: "kSuit", label: "Pressurised-suit penalty", min: 1, max: 1.6, step: 0.05, unit: "×", assumption: true },
+  { key: "tankL", label: "Usable O₂ per astronaut", min: 150, max: 900, step: 10, unit: "L", assumption: true },
 ];
+
+function Slider({ label, value, unit, min, max, step, onChange, assumption }: {
+  label: string; value: number; unit: string; min: number; max: number; step: number; onChange: (v: number) => void; assumption?: boolean;
+}) {
+  return (
+    <label className="block py-1">
+      <div className="flex items-baseline justify-between gap-2">
+        <span className="text-muted">{label}{assumption && <span className="ml-1 text-[10px] text-caution" title="Assumption: not a NASA specification">assumed</span>}</span>
+        <span className="num text-[12px]">{value.toFixed(step < 1 ? 2 : 0)} {unit}</span>
+      </div>
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+    </label>
+  );
+}
 
 export function EvaConfig() {
   const eva = useMission((s) => s.eva);
@@ -22,30 +35,29 @@ export function EvaConfig() {
   const setSMax = useMission((s) => s.setSMax);
   const levelW = metabolicRateW(eva, eva.speedMs, 0);
   return (
-    <div className="panel space-y-2 p-3">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-sm font-semibold"><Backpack size={15} className="text-hud" /> EVA life-support configurator</div>
-        <button className="flex items-center gap-1 text-[11px] text-muted hover:text-ink" onClick={() => { setEva(DEFAULT_EVA); setSMax(15); }}>
-          <RotateCcw size={12} /> Reset
+    <div className="space-y-4">
+      <section>
+        <h3 className="label mb-1">Mobility limit</h3>
+        <Slider label="Maximum walkable slope" value={sMax} unit="°" min={8} max={25} step={1} onChange={setSMax} />
+        <p className="text-[11px] leading-[1.5] text-faint">Cells steeper than this are excluded and every route is recomputed.</p>
+      </section>
+      <section>
+        <h3 className="label mb-1">Crew and load</h3>
+        {FIELDS.map((f) => (
+          <Slider key={f.key} label={f.label} value={Number(eva[f.key])} unit={f.unit} min={f.min} max={f.max} step={f.step}
+            onChange={(v) => setEva({ [f.key]: v })} assumption={f.assumption} />
+        ))}
+        <button className="mt-1 text-[11px] text-muted underline-offset-2 hover:text-ink hover:underline" onClick={() => { setEva(DEFAULT_EVA); setSMax(15); }}>
+          Reset to defaults
         </button>
-      </div>
-      <label className="block text-[11px]">
-        <div className="flex justify-between"><span className="text-muted">Max walkable slope (S<sub>max</sub>)</span><span className="num">{sMax}°</span></div>
-        <input type="range" min={8} max={25} step={1} value={sMax} onChange={(e) => setSMax(Number(e.target.value))} />
-      </label>
-      {FIELDS.map((f) => (
-        <label key={f.key} className="block text-[11px]">
-          <div className="flex justify-between gap-2">
-            <span className="text-muted">{f.label} {f.tag && <span className="ml-1 rounded border border-caution/40 px-1 text-[9px] text-caution">{f.tag}</span>}</span>
-            <span className="num">{Number(eva[f.key]).toFixed(f.step < 1 ? 2 : 0)} {f.unit}</span>
-          </div>
-          <input type="range" min={f.min} max={f.max} step={f.step} value={eva[f.key]} onChange={(e) => setEva({ [f.key]: Number(e.target.value) })} />
-        </label>
-      ))}
-      <div className="num rounded-md border border-line bg-space/50 p-2 text-[11px] leading-5">
-        Level walking: {levelW.toFixed(0)} W → {o2LitresPerMin(levelW).toFixed(2)} L O₂/min
-        <div className="text-[10px] text-muted">Pandolf (1977) adapted to Mars gravity (g = 3.721 m/s²); basal term not gravity-scaled. MODELLED.</div>
-      </div>
+      </section>
+      <section className="border-t border-line pt-3 text-[12px] leading-[1.55]">
+        <h3 className="label mb-1">Metabolic model</h3>
+        <div className="num">Level walking: {levelW.toFixed(0)} W → {o2LitresPerMin(levelW).toFixed(2)} L O₂/min</div>
+        <p className="mt-1 text-muted">
+          Pandolf et al. (1977) load-carriage equation with the load and walking terms scaled to Mars gravity (3.721 m/s²); the resting term is not scaled. O₂ from 20.1 kJ per litre. Fitted to unsuited walking on Earth, so treat it as a model.
+        </p>
+      </section>
     </div>
   );
 }
