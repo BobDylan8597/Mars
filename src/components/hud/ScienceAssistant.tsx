@@ -13,7 +13,7 @@ export function ScienceAssistant({ ctx, onClose }: { ctx: AssistantContext; onCl
     setText("");
   };
   return (
-    <div className="panel flex max-h-[62vh] w-[560px] flex-col text-[12px]">
+    <div className="panel flex max-h-[62vh] w-[min(560px,calc(100vw-640px))] flex-col text-[12px]">
       <div className="flex items-center justify-between border-b border-line px-3 py-2">
         <div>
           <span className="font-semibold">Science assistant</span>

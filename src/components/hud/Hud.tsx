@@ -193,8 +193,9 @@ export function Hud() {
         </div>
       )}
 
-      {/* left: suit & life support */}
-      <div className="panel absolute w-[250px] space-y-2.5 p-3" style={{ top: HEADER_H + 70, left: 12 }}>
+      {/* left column: suit & life support, tactical map pinned below; never overlap */}
+      <div className="absolute flex w-[280px] flex-col gap-2" style={{ top: HEADER_H + 70, left: 12, bottom: 12 }}>
+      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3">
         <div className="label">Suit · EVA-1</div>
         <div className={o2Tone}>
           <div className="flex items-baseline justify-between"><span className="text-[11px] text-muted">O₂ tank</span><span className="num text-[26px] font-semibold leading-7">{snap ? snap.o2RemainingPct.toFixed(0) : "—"}%</span></div>
@@ -231,9 +232,23 @@ export function Hud() {
           <span className="text-faint">Mission Twin · {twin.speed}×</span>
         </div>
       </div>
+      <div className="panel relative mt-auto h-[230px] min-h-[140px] shrink overflow-hidden">
+        <MapCanvas
+          region={region}
+          classes={null}
+          routes={planner.plan?.routes ?? null}
+          env={planner.env}
+          markers={live.markers}
+          divertCells={live.diversion?.plan.cells ?? null}
+          focusCell={snap ? [snap.col, snap.row] : null}
+          compact
+        />
+      </div>
+      </div>
 
-      {/* right: terrain + environment */}
-      <div className="panel absolute w-[250px] space-y-2.5 p-3" style={{ top: HEADER_H + 70, right: 12 }}>
+      {/* right column: terrain + environment, field log pinned below; never overlap */}
+      <div className="absolute flex w-[300px] flex-col gap-2" style={{ top: HEADER_H + 70, right: 12, bottom: 12 }}>
+      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3">
         <div className="label">Terrain under foot</div>
         <div className="flex items-center gap-3">
           <div className="relative h-14 w-14 rounded-full border border-line">
@@ -265,30 +280,22 @@ export function Hud() {
           {online ? <RadioTower size={13} /> : <WifiOff size={13} />}
           {online ? "Radio line of sight to base" : commMode === "forced-offline" ? "Radio off (manual)" : !losReady ? "Checking radio line of sight…" : "Radio shadow — terrain blocks base"}
         </div>
-        <button onClick={() => { setShowAssistant((s) => !s); setShowChecklist(false); }} className="w-full rounded border border-ink/50 px-2 py-1.5 text-[12px] hover:bg-white/5">
-          {showAssistant ? "Close science assistant" : "Ask the science assistant"}
-        </button>
       </div>
-
-      {/* bottom-left: tactical map */}
-      <div className="panel absolute overflow-hidden" style={{ left: 12, bottom: 12, width: 300, height: 230 }}>
-        <div className="relative h-full w-full">
-          <MapCanvas
-            region={region}
-            classes={null}
-            routes={planner.plan?.routes ?? null}
-            env={planner.env}
-            markers={live.markers}
-            divertCells={live.diversion?.plan.cells ?? null}
-            focusCell={snap ? [snap.col, snap.row] : null}
-            compact
-          />
-        </div>
+      <button onClick={() => { setShowAssistant((s) => !s); setShowChecklist(false); }} className="panel mt-auto shrink-0 px-2 py-1.5 text-[12px] hover:bg-white/5">
+        {showAssistant ? "Close science assistant" : "Ask the science assistant"}
+      </button>
+      <div className="panel shrink-0">
+        <FieldLogForm
+          online={online}
+          position={snap ? cellToLatLon(region.meta, snap.col, snap.row) : null}
+          targetId={target.id}
+        />
+      </div>
       </div>
 
       {/* bottom-centre: image strip */}
       {imgs.length > 0 && (
-        <div className="absolute bottom-3 left-1/2 w-[min(560px,40vw)] -translate-x-1/2">
+        <div className="absolute bottom-3 left-1/2 w-[min(560px,calc(100vw-640px))] -translate-x-1/2">
           <div className="rounded-t bg-space/85 px-2.5 py-1.5 text-[11px] leading-4">
             <div className="flex items-baseline justify-between gap-2">
               <span className="font-semibold text-ink">What you will see at {target.name}</span>
@@ -318,14 +325,6 @@ export function Hud() {
         </div>
       )}
 
-      {/* bottom-right: field log */}
-      <div className="panel absolute w-[300px]" style={{ right: 12, bottom: 12 }}>
-        <FieldLogForm
-          online={online}
-          position={snap ? cellToLatLon(region.meta, snap.col, snap.row) : null}
-          targetId={target.id}
-        />
-      </div>
     </div>
   );
 }
