@@ -2,6 +2,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
+import { GuidedDemo } from "@/components/GuidedDemo";
 import { DEM_PROVENANCE } from "@/lib/data/targets";
 import { useMission } from "@/lib/store";
 
@@ -31,6 +32,7 @@ export function AppHeader() {
           </Link>
         ))}
       </nav>
+      <GuidedDemo />
       <div className="ml-auto flex items-center gap-4 text-[12px] text-muted">
         <span className="hidden md:inline">
           Plan: {approved ? <span className="text-nominal">route {approved.route} sent to HUD</span> : <span>not yet approved</span>}

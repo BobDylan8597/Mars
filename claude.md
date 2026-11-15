@@ -276,9 +276,19 @@ Ir guardando capturas en `docs/evidence/` mientras se construye.
 - [x] D3 llega al sol 2022 e incluye 2024. 194 paradas dentro del mapa (soles 909–1343).
 - [x] Segundo objetivo: Bunsen Peak, sol 1088 (11 mar 2024), rover en soles 1084–1092 (18.4918°N, 77.3272°E).
 - [x] Validación: pendiente del DEM vs. `tilt` del rover → MAE 1.57°, r = 0.92 (`public/data/jezero/validation.json`).
-- [ ] Soles 2025 de Curiosity en las retículas (D4).
-- [ ] Cifras exactas de RAD y factor de calidad (D13).
+- [x] Soles 2025 de Curiosity en las retículas (D4) → campaña soles ~4540–4790; sol 4653 en 4.807°S, 137.380°E, −3,608 m. (Las coordenadas originales 4.68°S / −3,820 m eran incorrectas.)
+- [x] RAD: 210 µGy/día absorbida, 640 µSv/día equivalente (Hassler et al. 2014), usado en `src/lib/core/radiation.ts`.
 - [ ] Identificadores de capas de Trek para THEMIS y CTX (D10, D16).
 - [ ] Valores de referencia MEDA/REMS (D15) y endpoint de DONKI (D14).
 - [ ] Tasa metabólica medida en EVAs Apollo para la comprobación de sensatez (6.4).
 - [ ] Nombre del equipo e integrantes (PDF §1).
+
+---
+
+## 12. Estado de construcción (15 nov 2026, 00:00)
+
+- **Nivel 1 — hecho:** datos reales de Jezero, motor con tests, Mission Control (mapa, capas, SOI, rutas A/B/C, A* vs. Dijkstra, configurador EVA).
+- **Nivel 2 — hecho:** HUD (imágenes reales de Perseverance, brújula, O₂/Bingo, terreno, ambiente), Mission Twin sincronizado, línea de vista de radio con curvatura, refugios, bitácora sin conexión con sincronización, emergencias con desvío A*.
+- **Nivel 3 — hecho:** ficha de Gale/retículas con traverse y fotos reales de Curiosity 2025 y cita textual del reto; asistente científico con base curada en 3 bloques; demo guiada de 6 pasos.
+- **No hecho (trabajo futuro en el PDF):** capas THEMIS y geología USGS, terreno 3D, batería/estrés térmico PLSS, DTM y rutas para Gale.
+- Mapa en color: tinte aproximado sobre la banda RED monocromática de HiRISE (etiquetado como no color verdadero).

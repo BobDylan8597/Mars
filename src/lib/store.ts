@@ -55,6 +55,12 @@ export interface MissionState {
   /** manual radio override on the HUD: "auto" follows line-of-sight */
   commMode: "auto" | "forced-offline";
   logs: FieldLog[];
+  /** Mission Control side-panel tab (driven by the guided demo) */
+  mcTab: "layers" | "targets" | "eva" | "env" | "logs";
+  /** guided demo step (0-based) or null when the demo is off */
+  demoStep: number | null;
+  setMcTab: (t: MissionState["mcTab"]) => void;
+  setDemoStep: (s: number | null) => void;
   setTarget: (id: string) => void;
   setRoute: (r: RouteKey) => void;
   setSMax: (v: number) => void;
@@ -108,6 +114,10 @@ export const useMission = create<MissionState>()(
       emergency: null,
       commMode: "auto",
       logs: [],
+      mcTab: "targets",
+      demoStep: null,
+      setMcTab: (mcTab) => set({ mcTab }),
+      setDemoStep: (demoStep) => set({ demoStep }),
       setTarget: (targetId) => set({ targetId }),
       setRoute: (selectedRoute) => set({ selectedRoute }),
       setSMax: (sMax) => set({ sMax }),
@@ -145,7 +155,7 @@ if (typeof window !== "undefined" && "BroadcastChannel" in window) {
     targetId: s.targetId, selectedRoute: s.selectedRoute, sMax: s.sMax, eva: s.eva,
     soiWeights: s.soiWeights, layers: s.layers, marsTint: s.marsTint, antennaHeightM: s.antennaHeightM,
     atmos: s.atmos, approvedPlan: s.approvedPlan, twin: s.twin, emergency: s.emergency,
-    commMode: s.commMode, logs: s.logs,
+    commMode: s.commMode, logs: s.logs, demoStep: s.demoStep,
   });
   useMission.subscribe((s) => {
     if (applyingRemote) return;

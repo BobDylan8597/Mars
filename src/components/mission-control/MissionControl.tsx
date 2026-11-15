@@ -21,7 +21,6 @@ const TABS = [
   { id: "env", label: "Environment" },
   { id: "logs", label: "Field logs" },
 ] as const;
-type Tab = (typeof TABS)[number]["id"];
 
 const SIDE_W = 350;
 const GAP = 10;
@@ -29,7 +28,8 @@ const GAP = 10;
 export function MissionControl() {
   const { region, error } = useRegion();
   const planner = usePlanner();
-  const [tab, setTab] = useState<Tab>("targets");
+  const tab = useMission((s) => s.mcTab);
+  const setTab = useMission((s) => s.setMcTab);
   const [sideOpen, setSideOpen] = useState(true);
   const plannerRef = useRef<HTMLDivElement>(null);
   const [plannerH, setPlannerH] = useState(260);
