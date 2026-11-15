@@ -1,0 +1,62 @@
+{
+ "env.jpg": {
+  "w": 525,
+  "h": 1254
+ },
+ "gale.jpg": {
+  "w": 525,
+  "h": 1254
+ },
+ "hud-assistant.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "hud-emergency.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "hud-target.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "hud-visor.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "mc-2d.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "mc-3d-hypso.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "mc-3d.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "mc-comm.jpg": {
+  "w": 1800,
+  "h": 1012
+ },
+ "planner.jpg": {
+  "w": 1800,
+  "h": 634
+ },
+ "arch-en.png": {
+  "w": 2250,
+  "h": 743
+ },
+ "arch-es.png": {
+  "w": 2250,
+  "h": 745
+ },
+ "validation-en.png": {
+  "w": 1113,
+  "h": 850
+ },
+ "validation-es.png": {
+  "w": 1113,
+  "h": 850
+ }
+}
