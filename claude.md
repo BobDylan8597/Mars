@@ -271,9 +271,11 @@ Ir guardando capturas en `docs/evidence/` mientras se construye.
 
 ## 11. Pendientes de verificación
 
-- [ ] Cobertura de D1 sobre Bright Angel / Neretva Vallis (`02_inspect_coverage.py`).
-- [ ] Sol y coordenadas de Cheyava Falls (D3 o D7).
-- [ ] Si D3 incluye soles de 2024; si no, buscar el archivo de waypoints actualizado.
+- [x] Cobertura de D1 sobre Bright Angel / Neretva Vallis → cubierta (D1: 18.30–18.67°N, 77.22–77.58°E). Ventana usada: 4×4 km a 5 m, `scripts/data-prep/crop_jezero.py`.
+- [x] Sol y coordenadas de Cheyava Falls → sol ~1215 (21 jul 2024, derivado de la fecha); posición del rover soles 1206–1210: 18.4975°N, 77.3053°E.
+- [x] D3 llega al sol 2022 e incluye 2024. 194 paradas dentro del mapa (soles 909–1343).
+- [x] Segundo objetivo: Bunsen Peak, sol 1088 (11 mar 2024), rover en soles 1084–1092 (18.4918°N, 77.3272°E).
+- [x] Validación: pendiente del DEM vs. `tilt` del rover → MAE 1.57°, r = 0.92 (`public/data/jezero/validation.json`).
 - [ ] Soles 2025 de Curiosity en las retículas (D4).
 - [ ] Cifras exactas de RAD y factor de calidad (D13).
 - [ ] Identificadores de capas de Trek para THEMIS y CTX (D10, D16).
