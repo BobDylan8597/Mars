@@ -154,6 +154,63 @@ export const TARGETS: ScienceTarget[] = [
   },
 ];
 
+/** The challenge's own example. Shown as a science dossier (no DTM loaded for route planning here). */
+export const GALE_BOXWORK: ScienceTarget = {
+  id: "GALE-T1",
+  name: "Mount Sharp boxwork formations",
+  region: "gale",
+  lat: -4.80708,
+  lon: 137.3799,
+  locationNote:
+    "Curiosity position at sol 4653 (MSL waypoints), in the middle of the boxwork campaign (sols ~4540-4790, mid-2025). Elevation -3,608 m.",
+  summary:
+    "Networks of low mineral ridges on the lower slopes of Mount Sharp (Aeolis Mons) that look like spiderwebs from orbit. Curiosity drove into them in 2025 to test how groundwater shaped Gale crater as Mars dried out.",
+  findings: [
+    "Ridges about 1-2 m tall separated by sandy hollows; the pattern extends 10-20 km across the side of Mount Sharp.",
+    "Groundwater carried minerals into fractures; the cemented fracture walls resisted wind erosion while softer rock between them was worn away.",
+    "Pea-sized nodules were imaged in the ridges and hollows (NASA blog, sols 4649-4654).",
+    "Minerals this high on Mount Sharp suggest the groundwater table stayed higher, for longer, than previously thought.",
+  ],
+  limitations: [
+    "How such a large network formed is still an open question for the science team.",
+    "No HiRISE DTM is loaded for this site in MARS PATHFINDER, so no EVA route is computed here.",
+  ],
+  samplingChecklist: [
+    "Compare ridge-crest and hollow-floor rock: texture, colour, cement",
+    "Measure ridge height and spacing along a transect",
+    "Collect nodules from ridge and hollow for mineralogy",
+    "Look for layered veins in the ridge walls (fracture fill sequence)",
+  ],
+  scores: { M: 0.85, G: 0.95, T: 0.95, Q: 0.7 },
+  scoreRationale: {
+    M: "Mineral cement and nodules identified in situ by Curiosity.",
+    G: "Kilometre-scale groundwater fracture network.",
+    T: "Directly addresses how long water persisted as Mars dried.",
+    Q: "Rover data and HiRISE imagery; no terrain model loaded in this tool.",
+  },
+  provenance: {
+    mission: "Mars Science Laboratory (Curiosity)",
+    instrument: "Navcam, Hazcam, ChemCam RMI (images); rover localisation",
+    productId: "MSL waypoints sols 4540-4790; MSL raw images sols 4645-4656",
+    observationDate: "2025",
+    spatialResolution: "Rover scale (mm to m)",
+    coverage: "Curiosity traverse through the boxwork unit",
+    uncertainty: "Position: rover location, metre-level",
+    temporalClass: "Historical observation",
+    verification: "VERIFIED",
+    sources: [
+      { label: "NASA: Curiosity sees Martian spiderwebs up close", url: "https://www.nasa.gov/missions/mars-science-laboratory/curiosity-rover/NASAs-curiosity-rover-sees-martian-spiderwebs-up-close/" },
+      { label: "NASA blog: Sols 4649-4654, Ridges, Hollows, and Nodules", url: "https://science.nasa.gov/blog/curiosity-blog-sols-4649-4654-ridges-hollows-and-nodules-oh-my" },
+      { label: "MSL waypoints (MMGIS)", url: "https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json" },
+      { label: "Curiosity raw images", url: "https://mars.nasa.gov/msl/multimedia/raw-images/" },
+    ],
+  },
+};
+
+/** Verbatim from the challenge statement as provided to the team (Spanish edition). */
+export const CHALLENGE_QUOTE =
+  "aprender más sobre las formaciones de retículas, un fenómeno geológico que el rover Curiosity estudió en 2025, deberías seleccionar una ubicación donde estas formaciones sean abundantes, como la región del Monte Sharp, donde Curiosity las observó.";
+
 export const DEM_PROVENANCE: Provenance = {
   mission: "Mars Reconnaissance Orbiter",
   instrument: "HiRISE (stereo DTM mosaic, USGS)",

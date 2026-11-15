@@ -5,6 +5,7 @@ import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { soiBreakdown } from "@/lib/core/soi";
 import { TARGETS } from "@/lib/data/targets";
 import { useMission } from "@/lib/store";
+import { GalePanel } from "./GalePanel";
 
 const PART_COLORS = { M: "#c98b5b", G: "#b9a46a", T: "#7fa6c4", Q: "#7aa88d" } as const;
 const WEIGHT_LABEL = {
@@ -101,6 +102,8 @@ export function TargetPanel() {
         <h3 className="label mt-3">How the position was obtained</h3>
         <p className="mt-1 text-[12px] leading-[1.5] text-muted">{sel.locationNote}</p>
       </section>
+
+      <GalePanel />
     </div>
   );
 }

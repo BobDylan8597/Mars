@@ -1,0 +1,489 @@
+{
+ "source": {
+  "waypoints": "https://mars.nasa.gov/mmgis-maps/MSL/Layers/json/MSL_waypoints.json",
+  "images": "NASA MSL raw image API"
+ },
+ "campaign_sols": [
+  4540,
+  4800
+ ],
+ "traverse": [
+  {
+   "sol": 4541,
+   "lat": -4.79781585,
+   "lon": 137.3859258,
+   "elev": -3654.97,
+   "dist_total_m": 35087.97
+  },
+  {
+   "sol": 4544,
+   "lat": -4.79796004,
+   "lon": 137.3856636,
+   "elev": -3654.481,
+   "dist_total_m": 35107.88
+  },
+  {
+   "sol": 4546,
+   "lat": -4.79826524,
+   "lon": 137.3850097,
+   "elev": -3653.485,
+   "dist_total_m": 35153.32
+  },
+  {
+   "sol": 4548,
+   "lat": -4.79879294,
+   "lon": 137.3840451,
+   "elev": -3650.774,
+   "dist_total_m": 35222.5
+  },
+  {
+   "sol": 4552,
+   "lat": -4.79926999,
+   "lon": 137.3835727,
+   "elev": -3648.368,
+   "dist_total_m": 35265.01
+  },
+  {
+   "sol": 4554,
+   "lat": -4.79971414,
+   "lon": 137.3834371,
+   "elev": -3645.732,
+   "dist_total_m": 35294.32
+  },
+  {
+   "sol": 4558,
+   "lat": -4.79981165,
+   "lon": 137.3834991,
+   "elev": -3646.638,
+   "dist_total_m": 35301.62
+  },
+  {
+   "sol": 4560,
+   "lat": -4.79984723,
+   "lon": 137.3835414,
+   "elev": -3647.181,
+   "dist_total_m": 35305.46
+  },
+  {
+   "sol": 4571,
+   "lat": -4.80040688,
+   "lon": 137.382987,
+   "elev": -3643.934,
+   "dist_total_m": 35353.46
+  },
+  {
+   "sol": 4573,
+   "lat": -4.80116383,
+   "lon": 137.382517,
+   "elev": -3644.188,
+   "dist_total_m": 35406.95
+  },
+  {
+   "sol": 4575,
+   "lat": -4.80190838,
+   "lon": 137.3821132,
+   "elev": -3644.423,
+   "dist_total_m": 35462.06
+  },
+  {
+   "sol": 4578,
+   "lat": -4.8019306,
+   "lon": 137.3817054,
+   "elev": -3645.46,
+   "dist_total_m": 35486.53
+  },
+  {
+   "sol": 4580,
+   "lat": -4.80232637,
+   "lon": 137.3812512,
+   "elev": -3643.912,
+   "dist_total_m": 35523.68
+  },
+  {
+   "sol": 4582,
+   "lat": -4.80234626,
+   "lon": 137.3812526,
+   "elev": -3643.818,
+   "dist_total_m": 35527.7
+  },
+  {
+   "sol": 4585,
+   "lat": -4.80256772,
+   "lon": 137.381053,
+   "elev": -3644.11,
+   "dist_total_m": 35549.28
+  },
+  {
+   "sol": 4587,
+   "lat": -4.80273617,
+   "lon": 137.3807901,
+   "elev": -3643.5,
+   "dist_total_m": 35567.79
+  },
+  {
+   "sol": 4588,
+   "lat": -4.80242965,
+   "lon": 137.3805951,
+   "elev": -3645.303,
+   "dist_total_m": 35591.2
+  },
+  {
+   "sol": 4591,
+   "lat": -4.80250974,
+   "lon": 137.3804498,
+   "elev": -3644.62,
+   "dist_total_m": 35601.83
+  },
+  {
+   "sol": 4594,
+   "lat": -4.802963,
+   "lon": 137.3804319,
+   "elev": -3642.423,
+   "dist_total_m": 35636.44
+  },
+  {
+   "sol": 4596,
+   "lat": -4.80360579,
+   "lon": 137.3800743,
+   "elev": -3640.497,
+   "dist_total_m": 35697.07
+  },
+  {
+   "sol": 4598,
+   "lat": -4.80401601,
+   "lon": 137.3797556,
+   "elev": -3635.866,
+   "dist_total_m": 35731.79
+  },
+  {
+   "sol": 4600,
+   "lat": -4.804189,
+   "lon": 137.3796858,
+   "elev": -3632.878,
+   "dist_total_m": 35753.01
+  },
+  {
+   "sol": 4602,
+   "lat": -4.80436679,
+   "lon": 137.3796237,
+   "elev": -3630.754,
+   "dist_total_m": 35766.08
+  },
+  {
+   "sol": 4605,
+   "lat": -4.80443344,
+   "lon": 137.3795572,
+   "elev": -3631.479,
+   "dist_total_m": 35771.34
+  },
+  {
+   "sol": 4609,
+   "lat": -4.80474015,
+   "lon": 137.3793204,
+   "elev": -3624.329,
+   "dist_total_m": 35795.4
+  },
+  {
+   "sol": 4612,
+   "lat": -4.80494509,
+   "lon": 137.3792959,
+   "elev": -3623.51,
+   "dist_total_m": 35808.65
+  },
+  {
+   "sol": 4614,
+   "lat": -4.80520603,
+   "lon": 137.3794477,
+   "elev": -3622.376,
+   "dist_total_m": 35834.99
+  },
+  {
+   "sol": 4616,
+   "lat": -4.80545276,
+   "lon": 137.3795247,
+   "elev": -3620.597,
+   "dist_total_m": 35850.82
+  },
+  {
+   "sol": 4618,
+   "lat": -4.80549507,
+   "lon": 137.3795358,
+   "elev": -3620.486,
+   "dist_total_m": 35854.42
+  },
+  {
+   "sol": 4621,
+   "lat": -4.80541391,
+   "lon": 137.3795125,
+   "elev": -3620.089,
+   "dist_total_m": 35869.05
+  },
+  {
+   "sol": 4623,
+   "lat": -4.80548391,
+   "lon": 137.3799173,
+   "elev": -3621.591,
+   "dist_total_m": 35893.56
+  },
+  {
+   "sol": 4625,
+   "lat": -4.80585913,
+   "lon": 137.3797583,
+   "elev": -3617.654,
+   "dist_total_m": 35919.08
+  },
+  {
+   "sol": 4628,
+   "lat": -4.80599016,
+   "lon": 137.3794602,
+   "elev": -3613.896,
+   "dist_total_m": 35938.75
+  },
+  {
+   "sol": 4629,
+   "lat": -4.80616679,
+   "lon": 137.379723,
+   "elev": -3613.975,
+   "dist_total_m": 35971.12
+  },
+  {
+   "sol": 4633,
+   "lat": -4.80645796,
+   "lon": 137.3796739,
+   "elev": -3611.188,
+   "dist_total_m": 35990.55
+  },
+  {
+   "sol": 4634,
+   "lat": -4.80635617,
+   "lon": 137.3791167,
+   "elev": -3609.909,
+   "dist_total_m": 36025.52
+  },
+  {
+   "sol": 4636,
+   "lat": -4.80653823,
+   "lon": 137.3793381,
+   "elev": -3607.128,
+   "dist_total_m": 36043.84
+  },
+  {
+   "sol": 4639,
+   "lat": -4.80655332,
+   "lon": 137.3793171,
+   "elev": -3606.72,
+   "dist_total_m": 36045.63
+  },
+  {
+   "sol": 4641,
+   "lat": -4.80669051,
+   "lon": 137.3793537,
+   "elev": -3608.108,
+   "dist_total_m": 36061.3
+  },
+  {
+   "sol": 4643,
+   "lat": -4.80679651,
+   "lon": 137.3794121,
+   "elev": -3604.677,
+   "dist_total_m": 36069.53
+  },
+  {
+   "sol": 4647,
+   "lat": -4.80689063,
+   "lon": 137.3798121,
+   "elev": -3610.488,
+   "dist_total_m": 36097.01
+  },
+  {
+   "sol": 4650,
+   "lat": -4.8068928,
+   "lon": 137.3798418,
+   "elev": -3610.513,
+   "dist_total_m": 36098.91
+  },
+  {
+   "sol": 4653,
+   "lat": -4.80708025,
+   "lon": 137.3798962,
+   "elev": -3607.997,
+   "dist_total_m": 36116.16
+  },
+  {
+   "sol": 4655,
+   "lat": -4.80716832,
+   "lon": 137.3798956,
+   "elev": -3607.704,
+   "dist_total_m": 36121.36
+  },
+  {
+   "sol": 4660,
+   "lat": -4.80745212,
+   "lon": 137.3800604,
+   "elev": -3605.483,
+   "dist_total_m": 36142.59
+  },
+  {
+   "sol": 4662,
+   "lat": -4.80762759,
+   "lon": 137.3801893,
+   "elev": -3606.064,
+   "dist_total_m": 36155.35
+  },
+  {
+   "sol": 4664,
+   "lat": -4.8079252,
+   "lon": 137.3802489,
+   "elev": -3605.206,
+   "dist_total_m": 36191.03
+  },
+  {
+   "sol": 4667,
+   "lat": -4.80802327,
+   "lon": 137.3805074,
+   "elev": -3604.77,
+   "dist_total_m": 36208.5
+  },
+  {
+   "sol": 4669,
+   "lat": -4.80805222,
+   "lon": 137.380883,
+   "elev": -3606.525,
+   "dist_total_m": 36234.98
+  },
+  {
+   "sol": 4671,
+   "lat": -4.80827103,
+   "lon": 137.3812695,
+   "elev": -3608.263,
+   "dist_total_m": 36268.33
+  },
+  {
+   "sol": 4673,
+   "lat": -4.80871606,
+   "lon": 137.3815696,
+   "elev": -3606.57,
+   "dist_total_m": 36305.02
+  },
+  {
+   "sol": 4677,
+   "lat": -4.80871233,
+   "lon": 137.3816902,
+   "elev": -3606.641,
+   "dist_total_m": 36315.22
+  },
+  {
+   "sol": 4680,
+   "lat": -4.80827147,
+   "lon": 137.3812465,
+   "elev": -3608.02,
+   "dist_total_m": 36359.88
+  },
+  {
+   "sol": 4684,
+   "lat": -4.80801097,
+   "lon": 137.3810178,
+   "elev": -3607.941,
+   "dist_total_m": 36383.91
+  },
+  {
+   "sol": 4687,
+   "lat": -4.80783916,
+   "lon": 137.3810353,
+   "elev": -3610.432,
+   "dist_total_m": 36401.01
+  },
+  {
+   "sol": 4709,
+   "lat": -4.80799931,
+   "lon": 137.3810495,
+   "elev": -3608.689,
+   "dist_total_m": 36411.41
+  },
+  {
+   "sol": 4711,
+   "lat": -4.80800755,
+   "lon": 137.3810041,
+   "elev": -3607.722,
+   "dist_total_m": 36415.12
+  },
+  {
+   "sol": 4741,
+   "lat": -4.80776275,
+   "lon": 137.3810137,
+   "elev": -3611.533,
+   "dist_total_m": 36432.9
+  },
+  {
+   "sol": 4748,
+   "lat": -4.80790799,
+   "lon": 137.3811194,
+   "elev": -3610.29,
+   "dist_total_m": 36444.06
+  },
+  {
+   "sol": 4752,
+   "lat": -4.80803169,
+   "lon": 137.3809929,
+   "elev": -3607.648,
+   "dist_total_m": 36462.55
+  },
+  {
+   "sol": 4789,
+   "lat": -4.80800539,
+   "lon": 137.3809924,
+   "elev": -3608.018,
+   "dist_total_m": 36464.16
+  }
+ ],
+ "images": [
+  {
+   "imageid": "NLB_810298996EDR_S1182304NCAM00272M_",
+   "sol": 4650,
+   "instrument": "NAV_LEFT_B",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04650/opgs/edr/ncam/NLB_810298996EDR_S1182304NCAM00272M_.JPG",
+   "date_taken": "2025-09-05T00:10:20.000Z",
+   "title": "Sol 4650: Left Navigation Camera"
+  },
+  {
+   "imageid": "NLB_810568799EDR_S1182466NCAM00275M_",
+   "sol": 4653,
+   "instrument": "NAV_LEFT_B",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04653/opgs/edr/ncam/NLB_810568799EDR_S1182466NCAM00275M_.JPG",
+   "date_taken": "2025-09-08T03:07:06.000Z",
+   "title": "Sol 4653: Left Navigation Camera"
+  },
+  {
+   "imageid": "NRB_809845793EDR_S1182028NCAM00593M_",
+   "sol": 4645,
+   "instrument": "NAV_RIGHT_B",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04645/opgs/edr/ncam/NRB_809845793EDR_S1182028NCAM00593M_.JPG",
+   "date_taken": "2025-08-30T18:16:53.000Z",
+   "title": "Sol 4645: Right Navigation Camera"
+  },
+  {
+   "imageid": "NRB_810379491EDR_S1182304NCAM00593M_",
+   "sol": 4651,
+   "instrument": "NAV_RIGHT_B",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04651/opgs/edr/ncam/NRB_810379491EDR_S1182304NCAM00593M_.JPG",
+   "date_taken": "2025-09-05T22:31:56.000Z",
+   "title": "Sol 4651: Right Navigation Camera"
+  },
+  {
+   "imageid": "FLB_809947388EDR_F1182028FHAZ00200M_",
+   "sol": 4646,
+   "instrument": "FHAZ_LEFT_B",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04646/opgs/edr/fcam/FLB_809947388EDR_F1182028FHAZ00200M_.JPG",
+   "date_taken": "2025-08-31T22:30:09.000Z",
+   "title": "Sol 4646: Front Hazard Avoidance Camera (Front Hazcam)"
+  },
+  {
+   "imageid": "CR0_809937142PRC_F1182028CCAM03645L1",
+   "sol": 4646,
+   "instrument": "CHEMCAM_RMI",
+   "url": "https://mars.nasa.gov/msl-raw-images/proj/msl/redops/ods/surface/sol/04646/soas/rdr/ccam/CR0_809937142PRC_F1182028CCAM03645L1.PNG",
+   "date_taken": "2025-08-31T19:39:23.000Z",
+   "title": "Sol 4646: Chemistry & Camera (ChemCam)"
+  }
+ ]
+}
