@@ -90,7 +90,9 @@ export function Hud() {
   const imgs = images[target.id] ?? [];
   const img = imgs.length ? imgs[imgIdx % imgs.length] : null;
   const snap = live.snap;
-  const online = commMode === "auto" ? (snap?.comm ?? true) : false;
+  // until line of sight is computed, radio is unconfirmed: logs go to the local cache (safe default)
+  const losReady = planner.env !== null;
+  const online = commMode === "auto" ? losReady && (snap?.comm ?? false) : false;
   const atmo = assessAtmosphere(atmos);
 
   const nav = useMemo(() => {
@@ -241,7 +243,7 @@ export function Hud() {
         </div>
         <div className={`flex items-center gap-1.5 border-t border-line pt-2 text-[12px] ${online ? "text-nominal" : "text-caution"}`}>
           {online ? <RadioTower size={13} /> : <WifiOff size={13} />}
-          {online ? "Radio line of sight to base" : commMode === "forced-offline" ? "Radio off (manual)" : "Radio shadow — terrain blocks base"}
+          {online ? "Radio line of sight to base" : commMode === "forced-offline" ? "Radio off (manual)" : !losReady ? "Checking radio line of sight…" : "Radio shadow — terrain blocks base"}
         </div>
       </div>
 
