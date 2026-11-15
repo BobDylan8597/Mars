@@ -17,9 +17,14 @@ interface RoverImage {
   date_taken_utc: string; small: string; medium: string; large: string; full_res: string; credit: string; link: string; title: string;
 }
 
-const CAM_LABEL: Record<string, string> = {
-  MCZ_LEFT: "Mastcam-Z (left)", NAVCAM_LEFT: "Navcam (left)", SHERLOC_WATSON: "SHERLOC WATSON",
-  FRONT_HAZCAM_LEFT_A: "Front Hazcam", CACHECAM: "CacheCam (sample tube)", SUPERCAM_RMI: "SuperCam RMI",
+/** What each rover camera shows, in plain words for the crew. */
+const CAMERA: Record<string, { short: string; name: string; what: string }> = {
+  MCZ_LEFT: { short: "Outcrop view", name: "Mastcam-Z", what: "Zoomable mast camera: the outcrop as you will see it standing at the site." },
+  NAVCAM_LEFT: { short: "Surroundings", name: "Navcam", what: "Wide navigation view of the terrain around the target." },
+  SHERLOC_WATSON: { short: "Rock close-up", name: "WATSON", what: "Arm-mounted close-up of the rock surface, centimetre scale." },
+  FRONT_HAZCAM_LEFT_A: { short: "Ground ahead", name: "Front Hazcam", what: "The ground right in front of the rover: footing and loose material." },
+  CACHECAM: { short: "Sample core", name: "CacheCam", what: "The rock core collected here, seen inside its sample tube." },
+  SUPERCAM_RMI: { short: "Telescopic zoom", name: "SuperCam RMI", what: "Telescopic close-up of a spot analysed by the laser." },
 };
 
 function bearing(fromCol: number, fromRow: number, toCol: number, toRow: number) {
@@ -164,12 +169,11 @@ export function Hud() {
         </button>
       )}
       {showChecklist && (
-        <div className="panel absolute left-1/2 top-[56%] w-[360px] -translate-x-1/2 p-3 text-[12px]">
-          <div className="flex justify-between"><span className="font-semibold">{target.name} — sampling checklist</span><button className="text-muted" onClick={() => setShowChecklist(false)}>close</button></div>
+        <div className="panel absolute left-1/2 w-[380px] -translate-x-1/2 p-3 text-[12px]" style={{ top: HEADER_H + 80 }}>
+          <div className="flex justify-between"><span className="font-semibold">{target.name} — sampling checklist</span><button className="text-muted hover:text-ink" onClick={() => setShowChecklist(false)}>close</button></div>
           <ol className="mt-1 list-decimal space-y-0.5 pl-4">{target.samplingChecklist.map((c) => <li key={c}>{c}</li>)}</ol>
           <div className="label mt-2">Look for</div>
           <p className="text-muted">{target.findings[0]}</p>
-          <div className="mt-1 text-[11px] text-faint">{target.provenance.productId}</div>
         </div>
       )}
 
@@ -266,18 +270,29 @@ export function Hud() {
       {/* bottom-centre: image strip */}
       {imgs.length > 0 && (
         <div className="absolute bottom-3 left-1/2 w-[min(560px,40vw)] -translate-x-1/2">
-          <div className="mb-1 rounded bg-space/75 px-2 py-1 text-[11px] leading-4">
-            <span className="text-ink">{img ? CAM_LABEL[img.instrument] ?? img.instrument : ""}</span>
-            <span className="text-muted"> · Perseverance sol {img?.sol} · {img?.mastAz !== "UNK" ? `az ${Number(img?.mastAz).toFixed(0)}°, el ${Number(img?.mastEl).toFixed(0)}°` : "arm/body camera"}</span>
-            <div className="text-faint">
-              Georeference: exact rover position at this target stop (not the astronaut&apos;s simulated position) · <a href={img?.link} target="_blank" rel="noreferrer" className="underline">{img?.imageid.slice(0, 26)}… ↗</a> · NASA/JPL-Caltech
+          <div className="rounded-t bg-space/85 px-2.5 py-1.5 text-[11px] leading-4">
+            <div className="flex items-baseline justify-between gap-2">
+              <span className="font-semibold text-ink">What you will see at {target.name}</span>
+              <span className="text-faint">Real photos taken here by Perseverance</span>
             </div>
+            {img && (
+              <div className="mt-0.5 text-muted">
+                <span className="text-ink">{CAMERA[img.instrument]?.short ?? img.instrument}</span> — {CAMERA[img.instrument]?.what}{" "}
+                <span className="text-faint">({CAMERA[img.instrument]?.name ?? img.instrument}, sol {img.sol}. NASA/JPL-Caltech)</span>
+              </div>
+            )}
           </div>
-          <div className="flex gap-1 overflow-x-auto">
+          <div className="flex gap-1 overflow-x-auto rounded-b bg-space/70 p-1">
             {imgs.map((im, i) => (
-              <button key={im.imageid} onClick={() => setImgIdx(i)} className={`h-11 w-14 shrink-0 overflow-hidden rounded border ${i === imgIdx % imgs.length ? "border-ink" : "border-line opacity-70 hover:opacity-100"}`}>
+              <button
+                key={im.imageid}
+                onClick={() => setImgIdx(i)}
+                title={CAMERA[im.instrument]?.what}
+                className={`w-[72px] shrink-0 overflow-hidden rounded border text-left ${i === imgIdx % imgs.length ? "border-ink" : "border-line opacity-75 hover:opacity-100"}`}
+              >
                 {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img src={im.small} alt="" className="h-full w-full object-cover" />
+                <img src={im.small} alt={CAMERA[im.instrument]?.what ?? ""} className="h-10 w-full object-cover" />
+                <div className="truncate bg-space/90 px-1 py-0.5 text-[9px] text-muted">{CAMERA[im.instrument]?.short ?? im.instrument}</div>
               </button>
             ))}
           </div>
