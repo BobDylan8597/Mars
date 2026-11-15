@@ -44,7 +44,10 @@ function makeCanvas(img: ImageData) {
 
 const MAX_SCALE = 40;
 
-export function MapCanvas({ region, classes, routes, markers = [], env = null, divertCells = null, inset = { top: 0, right: 0, bottom: 0, left: 0 } }: Props) {
+export function MapCanvas({
+  region, classes, routes, markers = [], env = null, divertCells = null, focusCell = null, compact = false,
+  inset = { top: 0, right: 0, bottom: 0, left: 0 },
+}: Props & { focusCell?: [number, number] | null; compact?: boolean }) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -118,21 +121,37 @@ export function MapCanvas({ region, classes, routes, markers = [], env = null, d
     return { cx: (c0 + c1) / 2, cy: (r0 + r1) / 2, w: c1 - c0, h: r1 - r0 };
   }, [region.meta]);
 
+  // depend on primitive inset values: callers (and the default parameter) create a new object each render
+  const { top: iT, right: iR, bottom: iB, left: iL } = inset;
   const fit = useCallback(() => {
-    const fw = Math.max(100, size.w - inset.left - inset.right);
-    const fh = Math.max(100, size.h - inset.top - inset.bottom);
+    const fw = Math.max(100, size.w - iL - iR);
+    const fh = Math.max(100, size.h - iT - iB);
     const scale = Math.max(minScale, Math.min(fw / focus.w, fh / focus.h));
-    const sx = inset.left + fw / 2, sy = inset.top + fh / 2;
+    const sx = iL + fw / 2, sy = iT + fh / 2;
     setView(clamp({ scale, x: sx - focus.cx * scale, y: sy - focus.cy * scale }));
-  }, [size, inset, minScale, focus, clamp]);
+  }, [size, iT, iR, iB, iL, minScale, focus, clamp]);
 
   // first fit, then keep the view valid when the window is resized
   const fitted = useRef(false);
+  const hasFocus = focusCell !== null;
   useEffect(() => {
-    if (size.w === 0) return;
+    if (size.w === 0 || hasFocus) return;
     if (!fitted.current) { fitted.current = true; fit(); return; }
-    setView((v) => (v ? clamp(v) : v));
-  }, [size, fit, clamp]);
+    setView((v) => {
+      if (!v) return v;
+      const c = clamp(v);
+      return c.scale === v.scale && c.x === v.x && c.y === v.y ? v : c;
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [size, clamp, hasFocus]);
+
+  // tactical mode: keep the crew centred
+  const fc = focusCell?.[0], fr = focusCell?.[1];
+  useEffect(() => {
+    if (fc === undefined || fr === undefined || size.w === 0) return;
+    const scale = Math.max(minScale, size.w / 160);
+    setView(clamp({ scale, x: size.w / 2 - (fc + 0.5) * scale, y: size.h / 2 - (fr + 0.5) * scale }));
+  }, [fc, fr, size, minScale, clamp]);
 
   // draw
   useEffect(() => {
@@ -333,14 +352,14 @@ export function MapCanvas({ region, classes, routes, markers = [], env = null, d
         onPointerLeave={() => setHover(null)}
       />
 
-      <div className="absolute flex flex-col overflow-hidden rounded border border-line bg-panel/95" style={{ top: inset.top + 4, right: inset.right + 12 }}>
+      <div className={`absolute flex-col overflow-hidden rounded border border-line bg-panel/95 ${compact ? "hidden" : "flex"}`} style={{ top: inset.top + 4, right: inset.right + 12 }}>
         <button className="p-1.5 text-muted hover:bg-white/5 hover:text-ink" onClick={() => zoomAt(1.4, size.w / 2, size.h / 2)} aria-label="Zoom in"><Plus size={15} /></button>
         <button className="border-t border-line p-1.5 text-muted hover:bg-white/5 hover:text-ink" onClick={() => zoomAt(1 / 1.4, size.w / 2, size.h / 2)} aria-label="Zoom out"><Minus size={15} /></button>
         <button className="border-t border-line p-1.5 text-muted hover:bg-white/5 hover:text-ink" onClick={fit} aria-label="Reset view"><Maximize2 size={14} /></button>
       </div>
 
       <div className="num pointer-events-none absolute flex items-end gap-4 text-[11px] text-ink" style={{ right: inset.right + 12, bottom: inset.bottom + 10 }}>
-        {info && (
+        {info && !compact && (
           <div className="rounded bg-space/80 px-2 py-1 leading-4">
             {info.lat.toFixed(5)}°N {info.lon.toFixed(5)}°E · {Number.isFinite(info.z) ? info.z.toFixed(1) : "—"} m · slope {Number.isFinite(info.s) ? info.s.toFixed(1) : "—"}° · U {info.u.toFixed(2)}
             {info.cls !== null && <span className="text-muted"> · {TERRAIN_CLASS_LABEL[info.cls].toLowerCase()}</span>}
