@@ -12,6 +12,9 @@ import { usePlanner, useRegion } from "@/lib/useMissionData";
 import { useLive } from "@/lib/useLive";
 import { FieldLogForm } from "./FieldLogForm";
 import { ScienceAssistant } from "./ScienceAssistant";
+import dynamic from "next/dynamic";
+
+const VisorView = dynamic(() => import("./VisorView").then((m) => m.VisorView), { ssr: false });
 import type { AssistantContext } from "@/lib/data/knowledge";
 
 interface RoverImage {
@@ -89,6 +92,8 @@ export function Hud() {
   const [imgIdx, setImgIdx] = useState(0);
   const [showChecklist, setShowChecklist] = useState(false);
   const [showAssistant, setShowAssistant] = useState(false);
+  const [refOpen, setRefOpen] = useState(false);
+  const marsTint = useMission((s) => s.marsTint);
 
   useEffect(() => {
     fetch("/data/jezero/images.json").then((r) => r.json()).then((d) => setImages(d.targets)).catch(() => setImages({}));
@@ -128,7 +133,9 @@ export function Hud() {
 
   const o2Tone = !snap ? "text-ink" : snap.bingoMarginL < 0 ? "text-critical" : snap.o2RemainingPct < 40 ? "text-caution" : "text-nominal";
   const doseSoFar = evaDose((snap?.elapsedMin ?? 0) / 60, atmos.solar === "sep" ? 10 : 1);
-  const reticleOffset = nav && snap ? angDiff(nav.brgT, snap.headingDeg) : 999;
+  // reference photos open by themselves when the crew is within 150 m of the target
+  const nearTarget = !!nav && nav.distT < 150;
+  const showRef = imgs.length > 0 && (refOpen || nearTarget);
   const lowConfidence = snap && snap.uncertainty > 0.4;
   const assistantCtx: AssistantContext = {
     targetName: target.name,
@@ -141,14 +148,20 @@ export function Hud() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden bg-space">
-      {/* first-person view: real rover image */}
-      {img ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={img.large || img.medium} alt={img.title} className="absolute inset-0 h-full w-full object-cover" />
-      ) : <div className="absolute inset-0 flex items-center justify-center text-muted">Loading Perseverance imagery…</div>}
+      {/* simulated visor view: HiRISE terrain at true scale from the astronaut's eye */}
+      <VisorView
+        region={region}
+        route={live.route}
+        snap={snap}
+        target={target}
+        shelters={planner.env?.shelters ?? []}
+        divertCells={live.diversion?.plan.cells ?? null}
+        marsTint={marsTint}
+      />
       <div className="pointer-events-none absolute inset-0" style={{ background: "radial-gradient(ellipse 75% 70% at 50% 48%, transparent 55%, rgba(11,12,14,0.75) 85%, rgba(11,12,14,0.95) 100%)" }} />
 
       <AppHeader />
+      {!showRef && <div className="pointer-events-none absolute left-1/2 -translate-x-1/2 rounded bg-space/60 px-2 py-0.5 text-[10px] text-ink/80" style={{ bottom: 6 }}>Simulated visor view · HiRISE terrain at true scale, 5 m grid · near-ground detail is limited</div>}
 
       {/* top: compass + nav */}
       <div className="absolute inset-x-0 text-center" style={{ top: HEADER_H + 10 }}>
@@ -164,21 +177,16 @@ export function Hud() {
           </div>
         )}
         {!approved && <div className="mt-1 text-[11px] text-caution [text-shadow:0_1px_2px_#000]">No plan approved by Mission Control yet — following the route selected there.</div>}
+        <div className="mt-1 flex justify-center gap-2 text-[11px]">
+          <button onClick={() => { setShowChecklist((s) => !s); setShowAssistant(false); }} className="rounded bg-space/70 px-2 py-0.5 text-[#f0a37a] hover:bg-space/90">Sampling checklist</button>
+          <button onClick={() => setRefOpen((s) => !s)} className="rounded bg-space/70 px-2 py-0.5 text-ink hover:bg-space/90">{showRef ? "Hide reference photos" : `Reference photos (${imgs.length})`}</button>
+        </div>
       </div>
 
-      {/* AR reticle on the target when it is ahead */}
-      {snap && Math.abs(reticleOffset) < 40 && (
-        <button
-          onClick={() => setShowChecklist((s) => !s)}
-          className="absolute -translate-x-1/2 -translate-y-1/2 text-center"
-          style={{ left: `${50 + (reticleOffset / 40) * 30}%`, top: "46%" }}
-        >
-          <div className="mx-auto h-16 w-16 rounded-full border border-[#f0a37a]/90" style={{ boxShadow: "0 0 0 1px rgba(0,0,0,0.5)" }}>
-            <div className="mx-auto mt-[31px] h-px w-4 bg-[#f0a37a]" />
-          </div>
-          <div className="mt-1 rounded bg-space/70 px-1.5 text-[11px] text-[#f0a37a]">{target.name} · tap for checklist</div>
-        </button>
-      )}
+      {/* centre crosshair: keeps the middle of the visor clear */}
+      <div className="pointer-events-none absolute left-1/2 top-1/2 h-3 w-3 -translate-x-1/2 -translate-y-1/2">
+        <div className="absolute left-1/2 top-0 h-full w-px bg-ink/60" /><div className="absolute left-0 top-1/2 h-px w-full bg-ink/60" />
+      </div>
       {showAssistant && (
         <div className="absolute left-1/2 z-10 -translate-x-1/2" style={{ top: HEADER_H + 80 }}>
           <ScienceAssistant ctx={assistantCtx} onClose={() => setShowAssistant(false)} />
@@ -195,7 +203,7 @@ export function Hud() {
 
       {/* left column: suit & life support, tactical map pinned below; never overlap */}
       <div className="absolute flex w-[280px] flex-col gap-2" style={{ top: HEADER_H + 70, left: 12, bottom: 12 }}>
-      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3">
+      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3 !bg-[rgba(20,21,24,0.78)] backdrop-blur-[2px]">
         <div className="label">Suit · EVA-1</div>
         <div className={o2Tone}>
           <div className="flex items-baseline justify-between"><span className="text-[11px] text-muted">O₂ tank</span><span className="num text-[26px] font-semibold leading-7">{snap ? snap.o2RemainingPct.toFixed(0) : "—"}%</span></div>
@@ -248,7 +256,7 @@ export function Hud() {
 
       {/* right column: terrain + environment, field log pinned below; never overlap */}
       <div className="absolute flex w-[300px] flex-col gap-2" style={{ top: HEADER_H + 70, right: 12, bottom: 12 }}>
-      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3">
+      <div className="panel min-h-0 shrink space-y-2.5 overflow-y-auto p-3 !bg-[rgba(20,21,24,0.78)] backdrop-blur-[2px]">
         <div className="label">Terrain under foot</div>
         <div className="flex items-center gap-3">
           <div className="relative h-14 w-14 rounded-full border border-line">
@@ -294,12 +302,12 @@ export function Hud() {
       </div>
 
       {/* bottom-centre: image strip */}
-      {imgs.length > 0 && (
+      {showRef && (
         <div className="absolute bottom-3 left-1/2 w-[min(560px,calc(100vw-640px))] -translate-x-1/2">
           <div className="rounded-t bg-space/85 px-2.5 py-1.5 text-[11px] leading-4">
             <div className="flex items-baseline justify-between gap-2">
-              <span className="font-semibold text-ink">What you will see at {target.name}</span>
-              <span className="text-faint">Real photos taken here by Perseverance</span>
+              <span className="font-semibold text-ink">{nearTarget ? `Perseverance photographed this spot — compare with what you see` : `Reference: what you will see at ${target.name}`}</span>
+              <span className="text-faint">Real rover photos</span>
             </div>
             {img && (
               <div className="mt-0.5 text-muted">
@@ -308,6 +316,10 @@ export function Hud() {
               </div>
             )}
           </div>
+          {img && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={img.medium || img.large} alt={img.title} className="max-h-[26vh] w-full bg-space/80 object-contain" />
+          )}
           <div className="flex gap-1 overflow-x-auto rounded-b bg-space/70 p-1">
             {imgs.map((im, i) => (
               <button

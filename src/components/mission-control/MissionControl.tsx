@@ -13,6 +13,9 @@ import { PlannerPanel } from "./PlannerPanel";
 import { TargetPanel } from "./TargetPanel";
 import { TwinBar } from "./TwinBar";
 import { FieldLogList } from "./FieldLogList";
+import dynamic from "next/dynamic";
+
+const Terrain3D = dynamic(() => import("./Terrain3D").then((m) => m.Terrain3D), { ssr: false });
 
 const TABS = [
   { id: "layers", label: "Layers" },
@@ -31,6 +34,7 @@ export function MissionControl() {
   const tab = useMission((s) => s.mcTab);
   const setTab = useMission((s) => s.setMcTab);
   const [sideOpen, setSideOpen] = useState(true);
+  const [view3d, setView3d] = useState(false);
   const plannerRef = useRef<HTMLDivElement>(null);
   const [plannerH, setPlannerH] = useState(260);
   const live = useLive(region, planner.plan?.routes ?? null, planner.env, planner.divert, false);
@@ -59,15 +63,32 @@ export function MissionControl() {
 
   return (
     <div className="relative h-screen w-screen overflow-hidden">
-      <MapCanvas
-        region={region}
-        classes={planner.plan?.classes ?? null}
-        routes={planner.plan?.routes ?? null}
-        env={planner.env}
-        markers={live.markers}
-        divertCells={live.diversion?.plan.cells ?? null}
-        inset={{ top: HEADER_H + GAP, right: GAP, bottom: plannerH + GAP * 2, left }}
-      />
+      {view3d ? (
+        <Terrain3D
+          region={region}
+          routes={planner.plan?.routes ?? null}
+          markers={live.markers}
+          inset={{ top: HEADER_H + GAP, right: GAP, bottom: plannerH + GAP * 2, left }}
+        />
+      ) : (
+        <MapCanvas
+          region={region}
+          classes={planner.plan?.classes ?? null}
+          routes={planner.plan?.routes ?? null}
+          env={planner.env}
+          markers={live.markers}
+          divertCells={live.diversion?.plan.cells ?? null}
+          inset={{ top: HEADER_H + GAP, right: GAP, bottom: plannerH + GAP * 2, left }}
+        />
+      )}
+
+      <div className="absolute z-10 flex overflow-hidden rounded border border-line bg-panel/95 text-[12px]" style={{ top: HEADER_H + GAP, left: left + 2 }}>
+        {([false, true] as const).map((v) => (
+          <button key={String(v)} onClick={() => setView3d(v)} className={`px-3 py-1 ${view3d === v ? "bg-white/10 text-ink" : "text-muted hover:text-ink"}`}>
+            {v ? "3D" : "2D map"}
+          </button>
+        ))}
+      </div>
 
       <AppHeader />
 
