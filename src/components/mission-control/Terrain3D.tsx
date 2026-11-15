@@ -9,7 +9,8 @@ import type { RoutePlan } from "@/lib/plan";
 import { tintImage, rgbCss } from "@/lib/render";
 import { RouteKey, useMission } from "@/lib/store";
 import {
-  canvasTexture, disposeObject, drapedLine, HYPSO_RAMP, hypsometricCanvas, labelSprite, pin, TerrainFrame, terrainGeometry,
+  canvasTexture, ContextTerrain, contextGeometry, contextHypsoCanvas, disposeObject, drapedLine, HYPSO_RAMP, hypsometricCanvas,
+  labelSprite, loadContextTerrain, marsSkyTexture, pin, TerrainFrame, terrainGeometry,
 } from "@/lib/three/terrain3d";
 import type { MapMarker } from "./MapCanvas";
 import { ROUTE_COLORS } from "./MapCanvas";
@@ -35,7 +36,7 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
   const showRoutes = useMission((s) => s.layers.routes.visible);
   const ctx = useRef<{
     renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera; controls: OrbitControls;
-    terrain: THREE.Mesh | null; overlay: THREE.Group; frame: TerrainFrame | null; raf: number; dirty: boolean;
+    terrain: THREE.Mesh | null; context: THREE.Mesh | null; overlay: THREE.Group; frame: TerrainFrame | null; raf: number; dirty: boolean;
   } | null>(null);
 
   useEffect(() => {
@@ -43,6 +44,8 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
     img.onload = () => setOrtho(img);
     img.src = region.orthoUrl;
   }, [region.orthoUrl]);
+  const [context, setContext] = useState<ContextTerrain | null>(null);
+  useEffect(() => { loadContextTerrain().then(setContext); }, []);
 
   const textures = useMemo(() => {
     if (typeof document === "undefined") return null;
@@ -50,8 +53,11 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
       hypso: canvasTexture(hypsometricCanvas(region)),
       ortho: ortho ? canvasTexture(ortho) : null,
       tinted: ortho ? canvasTexture(tintImage(ortho)) : null,
+      ctxHypso: context ? canvasTexture(contextHypsoCanvas(context, region.meta.z_min, region.meta.z_max)) : null,
+      ctxOrtho: context?.ortho ? canvasTexture(context.ortho) : null,
+      ctxTinted: context?.ortho ? canvasTexture(tintImage(context.ortho)) : null,
     };
-  }, [region, ortho]);
+  }, [region, ortho, context]);
 
   // renderer, camera, controls (once)
   useEffect(() => {
@@ -61,16 +67,17 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
     renderer.outputColorSpace = THREE.SRGBColorSpace;
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
-    scene.background = new THREE.Color("#0b0c0e");
+    scene.background = marsSkyTexture();
+    scene.fog = new THREE.Fog("#a8845f", 7000, 15000);
     const camera = new THREE.PerspectiveCamera(45, 1, 5, 40000);
     const controls = new OrbitControls(camera, renderer.domElement);
     controls.enableDamping = true;
     controls.maxPolarAngle = Math.PI * 0.47;
     controls.minDistance = 150;
-    controls.maxDistance = 9000;
+    controls.maxDistance = 6000;
     const overlay = new THREE.Group();
     scene.add(overlay);
-    const c = { renderer, scene, camera, controls, terrain: null as THREE.Mesh | null, overlay, frame: null as TerrainFrame | null, raf: 0, dirty: true };
+    const c = { renderer, scene, camera, controls, terrain: null as THREE.Mesh | null, context: null as THREE.Mesh | null, overlay, frame: null as TerrainFrame | null, raf: 0, dirty: true };
     ctx.current = c;
     const resize = () => {
       const w = el.clientWidth, h = el.clientHeight;
@@ -126,6 +133,17 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [region, exag]);
 
+  // low-resolution context terrain around the work area (visual only)
+  useEffect(() => {
+    const c = ctx.current;
+    if (!c?.frame || !context) return;
+    if (c.context) { c.scene.remove(c.context); c.context.geometry.dispose(); (c.context.material as THREE.Material).dispose(); }
+    const mesh = new THREE.Mesh(contextGeometry(c.frame, context), new THREE.MeshBasicMaterial({ color: 0xd8d8d8 }));
+    c.context = mesh;
+    c.scene.add(mesh);
+    c.dirty = true;
+  }, [context, exag]);
+
   // texture
   useEffect(() => {
     const c = ctx.current;
@@ -133,8 +151,13 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
     const mat = c.terrain.material as THREE.MeshBasicMaterial;
     mat.map = colouring === "hypso" ? textures.hypso : (marsTint ? textures.tinted : textures.ortho) ?? textures.hypso;
     mat.needsUpdate = true;
+    if (c.context) {
+      const cm = c.context.material as THREE.MeshBasicMaterial;
+      cm.map = colouring === "hypso" ? textures.ctxHypso : (marsTint ? textures.ctxTinted : textures.ctxOrtho) ?? textures.ctxHypso;
+      cm.needsUpdate = true;
+    }
     c.dirty = true;
-  }, [textures, colouring, marsTint, exag]);
+  }, [textures, colouring, marsTint, exag, context]);
 
   // overlays: routes, rover traverse, base, targets, crew
   useEffect(() => {
@@ -211,6 +234,7 @@ export function Terrain3D({ region, routes, markers, inset }: Props) {
         ) : (
           <div className="text-muted">HiRISE orthoimage draped on the HiRISE DTM{marsTint ? " · approximate colour" : ""}</div>
         )}
+        <div className="text-muted">Inner 4 km: 5 m analysis grid · surroundings: 20 m context, visual only (slightly dimmed)</div>
         <div className="text-faint">Drag to rotate · right-drag to pan · wheel to zoom</div>
       </div>
     </div>

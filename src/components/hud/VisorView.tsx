@@ -10,7 +10,7 @@ import type { RoutePlan } from "@/lib/plan";
 import { tintImage } from "@/lib/render";
 import type { TwinSnapshot } from "@/lib/twin";
 import {
-  canvasTexture, disposeObject, drapedLine, hypsometricCanvas, labelSprite, pin, TerrainFrame, terrainGeometry,
+  canvasTexture, ContextTerrain, contextGeometry, disposeObject, drapedLine, hypsometricCanvas, labelSprite, loadContextTerrain, pin, TerrainFrame, terrainGeometry,
 } from "@/lib/three/terrain3d";
 
 const EYE_M = 1.7;
@@ -47,6 +47,8 @@ export function VisorView({
 }) {
   const wrap = useRef<HTMLDivElement>(null);
   const [ortho, setOrtho] = useState<HTMLImageElement | null>(null);
+  const [context, setContext] = useState<ContextTerrain | null>(null);
+  useEffect(() => { loadContextTerrain().then(setContext); }, []);
   const ctx = useRef<{ renderer: THREE.WebGLRenderer; scene: THREE.Scene; camera: THREE.PerspectiveCamera; terrain: THREE.Mesh; overlay: THREE.Group; f: TerrainFrame; render: () => void } | null>(null);
 
   useEffect(() => {
@@ -69,7 +71,7 @@ export function VisorView({
     el.appendChild(renderer.domElement);
     const scene = new THREE.Scene();
     scene.background = skyTexture();
-    scene.fog = new THREE.Fog("#b48d68", 600, 7000);
+    scene.fog = new THREE.Fog("#b48d68", 800, 9000);
     const camera = new THREE.PerspectiveCamera(70, 1, 0.3, 30000);
     const f = new TerrainFrame(region, 1); // first person: TRUE vertical scale
     const terrain = new THREE.Mesh(terrainGeometry(f, 1), new THREE.MeshBasicMaterial({ color: 0xffffff, fog: true }));
@@ -91,6 +93,17 @@ export function VisorView({
     resize();
     return () => { ro.disconnect(); disposeObject(scene); renderer.dispose(); el.removeChild(renderer.domElement); ctx.current = null; };
   }, [region]);
+
+  // context terrain to the horizon (visual only, true scale)
+  useEffect(() => {
+    const c = ctx.current;
+    if (!c || !context) return;
+    const map = context.ortho ? canvasTexture(marsTint ? tintImage(context.ortho) : context.ortho, 8) : null;
+    const mesh = new THREE.Mesh(contextGeometry(c.f, context), new THREE.MeshBasicMaterial({ color: 0xdddddd, map, fog: true }));
+    c.scene.add(mesh);
+    c.render();
+    return () => { c.scene.remove(mesh); mesh.geometry.dispose(); map?.dispose(); (mesh.material as THREE.Material).dispose(); };
+  }, [context, marsTint, region]);
 
   useEffect(() => {
     const c = ctx.current;
@@ -135,9 +148,11 @@ export function VisorView({
     const bp = pin(f, b.col, b.row, "#f2f2f2", 25);
     overlay.add(bp.group);
     const bl = labelSprite("Base", "#f2f2f2", 13, undefined, 0.002); bl.position.copy(bp.top); overlay.add(bl);
-    for (const s of shelters) {
-      const d = Math.hypot(s.col - snap.col, s.row - snap.row) * f.cell;
-      if (d > 1500) continue;
+    // only the two nearest shelters within 800 m: the ones that matter in an emergency
+    const near = shelters
+      .map((sh) => ({ sh, d: Math.hypot(sh.col - snap.col, sh.row - snap.row) * f.cell }))
+      .filter((x) => x.d <= 800).sort((a, b) => a.d - b.d).slice(0, 2);
+    for (const { sh: s, d } of near) {
       const sp = pin(f, s.col, s.row, "#8fb8d8", 8);
       overlay.add(sp.group);
       const sl = labelSprite("Shelter", "#b8d2e6", 12, `${d.toFixed(0)} m`, 0.0019); sl.position.copy(sp.top); overlay.add(sl);

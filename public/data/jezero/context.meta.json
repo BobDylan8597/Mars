@@ -1,0 +1,25 @@
+{
+  "width": 500,
+  "height": 500,
+  "cell_size_m": 20.0,
+  "bounds": {
+    "north": 18.574353024290573,
+    "south": 18.40564697570942,
+    "west": 77.22905557753374,
+    "east": 77.40694442246627
+  },
+  "z_min": -2560.263427734375,
+  "z_max": -1640.523681640625,
+  "valid_fraction": 0.905816,
+  "use": "visual context only; not used in any calculation",
+  "source": {
+    "doi": "10.5066/P9REJ9JN",
+    "file": "JEZ_hirise_soc_006_DTM_MOLAtopography_DeltaGeoid_1m_Eqc_latTs0_lon0_blend40.tif",
+    "resampling": "nearest 1 m -> 20 m"
+  },
+  "ortho": {
+    "file": "context_ortho.webp",
+    "pixel_size_m": 8.0,
+    "doi": "10.5066/P9QJDP48"
+  }
+}

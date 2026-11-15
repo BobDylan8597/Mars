@@ -182,3 +182,99 @@ export function disposeObject(o: THREE.Object3D) {
     });
   });
 }
+
+// ------------------------------------------------------------- context terrain + sky
+export interface ContextTerrain {
+  width: number;
+  height: number;
+  cell: number;
+  z: Float32Array;
+  ortho: HTMLImageElement | null;
+}
+
+let contextPromise: Promise<ContextTerrain | null> | null = null;
+/** 10 x 10 km, 20 m context DTM centred on the same point as the work area (visual only). */
+export function loadContextTerrain(base = "/data/jezero"): Promise<ContextTerrain | null> {
+  contextPromise ??= (async () => {
+    try {
+      const [meta, buf] = await Promise.all([
+        fetch(`${base}/context.meta.json`).then((r) => r.json()),
+        fetch(`${base}/context.bin`).then((r) => r.arrayBuffer()),
+      ]);
+      const ortho = await new Promise<HTMLImageElement | null>((res) => {
+        const img = new Image();
+        img.onload = () => res(img);
+        img.onerror = () => res(null);
+        img.src = `${base}/${meta.ortho.file}`;
+      });
+      return { width: meta.width, height: meta.height, cell: meta.cell_size_m, z: new Float32Array(buf), ortho };
+    } catch {
+      return null;
+    }
+  })();
+  return contextPromise;
+}
+
+/**
+ * Context mesh in the work-area frame. Vertices under the 4 x 4 km work area are pushed down a
+ * few metres so the high-resolution mesh always draws on top (no z-fighting).
+ */
+export function contextGeometry(f: TerrainFrame, c: ContextTerrain): THREE.BufferGeometry {
+  const { width: w, height: h, cell, z } = c;
+  const pos = new Float32Array(w * h * 3), uv = new Float32Array(w * h * 2);
+  const halfX = (f.W * f.cell) / 2 - 15, halfZ = (f.H * f.cell) / 2 - 15;
+  for (let r = 0; r < h; r++)
+    for (let col = 0; col < w; col++) {
+      const k = r * w + col;
+      const x = (col + 0.5 - w / 2) * cell, zz = (r + 0.5 - h / 2) * cell;
+      const e = z[k];
+      let y = f.y(Number.isFinite(e) ? e : f.zMid);
+      if (Math.abs(x) < halfX && Math.abs(zz) < halfZ) y -= 6 * f.exaggeration;
+      pos[k * 3] = x; pos[k * 3 + 1] = y; pos[k * 3 + 2] = zz;
+      uv[k * 2] = (col + 0.5) / w; uv[k * 2 + 1] = 1 - (r + 0.5) / h;
+    }
+  // no terrain is drawn where the USGS mosaic has no data (no invented relief)
+  const ok = (k: number) => Number.isFinite(z[k]);
+  const idx: number[] = [];
+  for (let r = 0; r < h - 1; r++)
+    for (let col = 0; col < w - 1; col++) {
+      const a = r * w + col, b = a + 1, d = a + w, e = d + 1;
+      if (ok(a) && ok(b) && ok(d)) idx.push(a, d, b);
+      if (ok(b) && ok(d) && ok(e)) idx.push(b, d, e);
+    }
+  const g = new THREE.BufferGeometry();
+  g.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+  g.setAttribute("uv", new THREE.BufferAttribute(uv, 2));
+  g.setIndex(new THREE.BufferAttribute(new Uint32Array(idx), 1));
+  return g;
+}
+
+/** Hypsometric texture for the context DTM, same colour scale as the work area. */
+export function contextHypsoCanvas(c: ContextTerrain, zMin: number, zMax: number): HTMLCanvasElement {
+  const cv = document.createElement("canvas");
+  cv.width = c.width; cv.height = c.height;
+  const g = cv.getContext("2d")!;
+  const img = g.createImageData(c.width, c.height);
+  for (let i = 0; i < c.z.length; i++) {
+    const t = Math.max(0, Math.min(1, (c.z[i] - zMin) / (zMax - zMin)));
+    const [R, G, B] = ramp(HYPSO_RAMP, t);
+    img.data[i * 4] = R * 0.85; img.data[i * 4 + 1] = G * 0.85; img.data[i * 4 + 2] = B * 0.85; img.data[i * 4 + 3] = 255;
+  }
+  g.putImageData(img, 0, 0);
+  return cv;
+}
+
+/** Mars daytime sky (butterscotch near the horizon), used instead of a black void. */
+export function marsSkyTexture() {
+  const c = document.createElement("canvas");
+  c.width = 4; c.height = 256;
+  const g = c.getContext("2d")!;
+  const grd = g.createLinearGradient(0, 0, 0, 256);
+  grd.addColorStop(0, "#4a3a2e");
+  grd.addColorStop(0.55, "#9c7a5a");
+  grd.addColorStop(1, "#d2ad86");
+  g.fillStyle = grd; g.fillRect(0, 0, 4, 256);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
