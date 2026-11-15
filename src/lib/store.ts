@@ -144,7 +144,12 @@ export const useMission = create<MissionState>()(
         return n;
       },
     }),
-    { name: "mars-pathfinder-mission-v3", version: 3 },
+    {
+      name: "mars-pathfinder-mission-v3",
+      version: 3,
+      // never trust saved state to be complete (older app versions, partial writes): deep-merge with defaults
+      merge: (persisted, current) => mergeSaved(persisted, current),
+    },
   ),
 );
 
@@ -163,7 +168,56 @@ if (typeof window !== "undefined" && "BroadcastChannel" in window) {
   });
   ch.onmessage = (e) => {
     applyingRemote = true;
-    useMission.setState(e.data);
+    // another tab may run an older build: merge field by field, keeping live sync fields
+    const cur = useMission.getState();
+    const d = obj(e.data);
+    const merged = mergeSaved(d, cur);
+    useMission.setState({
+      ...merged,
+      twin: { ...cur.twin, ...obj(d.twin) } as TwinState,
+      emergency: (d.emergency as MissionState["emergency"]) ?? null,
+      demoStep: typeof d.demoStep === "number" ? d.demoStep : null,
+    });
     applyingRemote = false;
+  };
+}
+
+function obj(v: unknown): Record<string, unknown> {
+  return v && typeof v === "object" && !Array.isArray(v) ? (v as Record<string, unknown>) : {};
+}
+
+/** Saved state merged over defaults, field by field, so missing or malformed pieces fall back safely. */
+export function mergeSaved(persisted: unknown, current: MissionState): MissionState {
+  const p = obj(persisted);
+  const layers = { ...current.layers };
+  const pl = obj(p.layers);
+  for (const k of Object.keys(layers) as LayerId[]) {
+    const v = obj(pl[k]);
+    layers[k] = {
+      visible: typeof v.visible === "boolean" ? v.visible : layers[k].visible,
+      opacity: typeof v.opacity === "number" ? v.opacity : layers[k].opacity,
+    };
+  }
+  const pick = <T,>(v: unknown, d: T, ok: (x: unknown) => boolean): T => (ok(v) ? (v as T) : d);
+  const isStr = (x: unknown) => typeof x === "string";
+  const isNum = (x: unknown) => typeof x === "number" && Number.isFinite(x);
+  return {
+    ...current,
+    targetId: pick(p.targetId, current.targetId, isStr),
+    selectedRoute: pick(p.selectedRoute, current.selectedRoute, (x) => x === "A" || x === "B" || x === "C"),
+    sMax: pick(p.sMax, current.sMax, isNum),
+    eva: { ...current.eva, ...obj(p.eva) } as EvaParams,
+    soiWeights: { ...current.soiWeights, ...obj(p.soiWeights) } as SoiWeights,
+    layers,
+    marsTint: pick(p.marsTint, current.marsTint, (x) => typeof x === "boolean"),
+    antennaHeightM: pick(p.antennaHeightM, current.antennaHeightM, isNum),
+    atmos: { ...current.atmos, ...obj(p.atmos) } as AtmosInputs,
+    approvedPlan: p.approvedPlan && obj(p.approvedPlan).route ? (p.approvedPlan as MissionState["approvedPlan"]) : null,
+    twin: { ...current.twin, ...obj(p.twin), playing: false, driver: null } as TwinState,
+    emergency: null,
+    commMode: pick(p.commMode, current.commMode, (x) => x === "auto" || x === "forced-offline"),
+    logs: Array.isArray(p.logs) ? (p.logs as FieldLog[]).filter((l) => l && typeof l.lat === "number") : [],
+    mcTab: pick(p.mcTab, current.mcTab, isStr),
+    demoStep: null,
   };
 }
