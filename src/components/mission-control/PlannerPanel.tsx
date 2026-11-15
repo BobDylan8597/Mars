@@ -19,8 +19,9 @@ function status(r: RoutePlan) {
 }
 
 export function PlannerPanel({
-  region, routes, computing, verification, verifying, onVerify,
+  region, routes, computing, verification, verifying, onVerify, twinBar,
 }: {
+  twinBar?: React.ReactNode;
   region: Region;
   routes: Record<RouteKey, RoutePlan> | null;
   computing: boolean;
@@ -61,7 +62,8 @@ export function PlannerPanel({
   const axis = { fill: "#8b9098", fontSize: 10, fontFamily: "var(--font-plex-mono)" };
 
   return (
-    <div className="panel flex max-h-full flex-col">
+    <div className="panel flex max-h-full flex-col overflow-y-auto">
+      {twinBar}
       <div className="flex items-center gap-3 border-b border-line px-3 py-2">
         <h2 className="font-semibold">Traverse planner</h2>
         <span className="text-muted">Base → {target?.name}</span>

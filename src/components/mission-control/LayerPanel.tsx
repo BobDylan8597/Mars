@@ -24,6 +24,8 @@ const GROUPS: { title: string; layers: LayerDef[] }[] = [
       { id: "roughness", name: "Roughness", detail: "plane-fit RMS, 0.5 m = 1", prov: derivedProvenance("Metre-scale bumps", "3x3 plane-fit residual") },
       { id: "classes", name: "Traversability", detail: "slope + roughness + U", prov: derivedProvenance("Depends on suit slope limit", "Rule-based classes") },
       { id: "uncertainty", name: "Data uncertainty U", detail: "resolution, gaps, resampling", prov: derivedProvenance("Native resolution + resampling + gaps", "U index 0..1") },
+      { id: "comm", name: "Radio shadow (comm blackout)", detail: "ray-traced from base mast, 20 m cells", prov: derivedProvenance("Terrain only; no multipath or relays", "Line-of-sight ray tracing with Mars curvature") },
+      { id: "shelters", name: "Topographic shelters", detail: "most sky blocked within 400 m", prov: derivedProvenance("Geometric sky blockage, 16 azimuths", "Horizon-angle analysis on HiRISE DTM") },
     ],
   },
   {
@@ -48,6 +50,8 @@ function Ramp({ stops, from, to, max }: { stops: [number, [number, number, numbe
 export function LayerPanel({ region, classShare }: { region: Region; classShare: number[] | null }) {
   const layers = useMission((s) => s.layers);
   const setLayer = useMission((s) => s.setLayer);
+  const marsTint = useMission((s) => s.marsTint);
+  const setMarsTint = useMission((s) => s.setMarsTint);
   const v = region.validation;
   return (
     <div className="space-y-4">
@@ -81,6 +85,12 @@ export function LayerPanel({ region, classShare }: { region: Region; classShare:
                         />
                         <span className="num w-8 text-right text-[10px] text-faint">{Math.round(st.opacity * 100)}%</span>
                       </div>
+                      {l.id === "ortho" && (
+                        <label className="mt-1 flex items-start gap-2 text-[11px] leading-4 text-muted">
+                          <input type="checkbox" checked={marsTint} onChange={() => setMarsTint(!marsTint)} className="mt-0.5 h-3 w-3 accent-[#9aa0a8]" />
+                          <span>Approximate Mars colour <span className="text-faint">(brightness-mapped tint; the HiRISE RED band is monochrome, so this is not true colour)</span></span>
+                        </label>
+                      )}
                       {l.id === "elevation" && <Ramp stops={ELEVATION_RAMP} from={`${region.meta.z_min.toFixed(0)} m`} to={`${region.meta.z_max.toFixed(0)} m`} max={1} />}
                       {l.id === "slope" && <Ramp stops={SLOPE_RAMP} from="0°" to="30°" max={30} />}
                       {l.id === "classes" && classShare && (

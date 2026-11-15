@@ -5,9 +5,9 @@ import { TERRAIN_CLASS_LABEL, TerrainClass } from "@/lib/core/terrain";
 import { cellToLatLon, latLonToCell, Region } from "@/lib/data/region";
 import { BASE_SITE, TARGETS } from "@/lib/data/targets";
 import {
-  classesImage, elevationImage, hillshade, roughnessImage, slopeImage, uncertaintyImage,
+  classesImage, elevationImage, hillshade, roughnessImage, slopeImage, tintImage, uncertaintyImage,
 } from "@/lib/render";
-import type { RoutePlan } from "@/lib/plan";
+import type { EnvironmentModel, RoutePlan } from "@/lib/plan";
 import { LayerId, RouteKey, useMission } from "@/lib/store";
 
 export const ROUTE_COLORS: Record<RouteKey, string> = { A: "#e0a23c", B: "#4fc1a6", C: "#8fb8d8" };
@@ -16,10 +16,21 @@ interface Props {
   region: Region;
   classes: Uint8Array | null;
   routes: Record<RouteKey, RoutePlan> | null;
-  /** optional live marker (Mission Twin / HUD) in grid cells */
-  marker?: { col: number; row: number; label: string } | null;
+  /** live markers (crew, rover, field logs) in grid cells */
+  markers?: MapMarker[];
+  env?: EnvironmentModel | null;
+  /** emergency diversion path */
+  divertCells?: [number, number][] | null;
   /** px reserved by floating UI, so "fit" frames the data inside the free area */
   inset?: { top: number; right: number; bottom: number; left: number };
+}
+
+export interface MapMarker {
+  col: number;
+  row: number;
+  label?: string;
+  color: string;
+  shape: "crew" | "rover" | "log";
 }
 
 type View = { scale: number; x: number; y: number };
@@ -33,7 +44,7 @@ function makeCanvas(img: ImageData) {
 
 const MAX_SCALE = 40;
 
-export function MapCanvas({ region, classes, routes, marker, inset = { top: 0, right: 0, bottom: 0, left: 0 } }: Props) {
+export function MapCanvas({ region, classes, routes, markers = [], env = null, divertCells = null, inset = { top: 0, right: 0, bottom: 0, left: 0 } }: Props) {
   const wrap = useRef<HTMLDivElement>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
@@ -59,6 +70,19 @@ export function MapCanvas({ region, classes, routes, marker, inset = { top: 0, r
     };
   }, [region]);
   const classCanvas = useMemo(() => (classes ? makeCanvas(classesImage(W, H, classes)) : null), [classes, W, H]);
+  const marsTint = useMission((s) => s.marsTint);
+  const tinted = useMemo(() => (ortho ? tintImage(ortho) : null), [ortho]);
+  const orthoSrc = ortho ? (marsTint ? tinted : ortho) : null;
+  const commCanvas = useMemo(() => {
+    if (!env || typeof document === "undefined") return null;
+    const m = env.comm;
+    const img = new ImageData(m.width, m.height);
+    for (let i = 0; i < m.data.length; i++) {
+      if (m.data[i]) continue;
+      img.data[i * 4] = 70; img.data[i * 4 + 1] = 60; img.data[i * 4 + 2] = 140; img.data[i * 4 + 3] = 200;
+    }
+    return makeCanvas(img);
+  }, [env]);
 
   useEffect(() => {
     const img = new Image();
@@ -131,15 +155,22 @@ export function MapCanvas({ region, classes, routes, marker, inset = { top: 0, r
       g.globalAlpha = L.opacity;
       g.drawImage(src, 0, 0, W, H);
     };
-    if (ortho && layers.ortho.visible) drawLayer("ortho", ortho);
+    if (orthoSrc && layers.ortho.visible) drawLayer("ortho", orthoSrc);
     else { g.globalAlpha = 1; g.drawImage(rasters.hillshade, 0, 0, W, H); }
     drawLayer("elevation", rasters.elevation);
+    // multiply keeps the colour of the layers underneath while adding relief
+    g.globalCompositeOperation = "multiply";
     drawLayer("hillshade", rasters.hillshade);
+    g.globalCompositeOperation = "source-over";
     drawLayer("slope", rasters.slope);
     drawLayer("roughness", rasters.roughness);
     drawLayer("uncertainty", rasters.uncertainty);
     g.imageSmoothingEnabled = false;
     drawLayer("classes", classCanvas);
+    if (commCanvas && env && layers.comm.visible) {
+      g.globalAlpha = layers.comm.opacity;
+      g.drawImage(commCanvas, 0, 0, env.comm.width * env.comm.step, env.comm.height * env.comm.step);
+    }
     g.globalAlpha = 1;
 
     const lw = (px: number) => px / view.scale;
@@ -204,13 +235,39 @@ export function MapCanvas({ region, classes, routes, marker, inset = { top: 0, r
       if (sel) { g.strokeStyle = "#d0652f"; g.lineWidth = lw(1.25); g.beginPath(); g.arc(cx, cy, lw(10), 0, Math.PI * 2); g.stroke(); }
       label(t.name, p.col, p.row, sel ? "#f0a37a" : "#f2f2f2", sel ? 600 : 500);
     }
-    if (marker) {
-      g.fillStyle = "#8fb8d8"; g.strokeStyle = "#0b0c0e"; g.lineWidth = lw(2);
-      g.beginPath(); g.arc(marker.col + 0.5, marker.row + 0.5, lw(6), 0, Math.PI * 2); g.fill(); g.stroke();
-      label(marker.label, marker.col, marker.row, "#8fb8d8", 600);
+    if (env && layers.shelters.visible) {
+      g.globalAlpha = layers.shelters.opacity;
+      for (const s of env.shelters) {
+        const cx = s.col + 0.5, cy = s.row + 0.5;
+        g.fillStyle = "rgba(143,184,216,0.25)"; g.strokeStyle = "#8fb8d8"; g.lineWidth = lw(1.5);
+        g.beginPath(); g.rect(cx - lw(5), cy - lw(5), lw(10), lw(10)); g.fill(); g.stroke();
+        label(`Shelter ${(s.skyBlocked * 100).toFixed(0)}% sky blocked`, s.col, s.row, "#b8d2e6", 500);
+      }
+      g.globalAlpha = 1;
+    }
+    if (env) {
+      const a = env.antenna;
+      g.strokeStyle = "#f2f2f2"; g.lineWidth = lw(1);
+      g.beginPath(); g.moveTo(a.col + 0.5, a.row + 0.5); g.lineTo(a.col + 0.5, a.row + 0.5 - lw(14)); g.stroke();
+    }
+    if (divertCells && divertCells.length > 1) {
+      g.strokeStyle = "rgba(11,12,14,0.8)"; g.lineWidth = lw(6); polyline(divertCells);
+      g.strokeStyle = "#d0584c"; g.lineWidth = lw(3); g.setLineDash([lw(5), lw(3)]); polyline(divertCells); g.setLineDash([]);
+    }
+    for (const m of markers) {
+      const cx = m.col + 0.5, cy = m.row + 0.5;
+      g.fillStyle = m.color; g.strokeStyle = "#0b0c0e"; g.lineWidth = lw(1.5);
+      if (m.shape === "log") {
+        g.beginPath(); g.rect(cx - lw(3.5), cy - lw(3.5), lw(7), lw(7)); g.fill(); g.stroke();
+      } else if (m.shape === "rover") {
+        g.beginPath(); g.rect(cx - lw(5), cy - lw(4), lw(10), lw(8)); g.fill(); g.stroke();
+      } else {
+        g.beginPath(); g.arc(cx, cy, lw(6), 0, Math.PI * 2); g.fill(); g.stroke();
+      }
+      if (m.label) label(m.label, m.col, m.row, m.color, 600);
     }
     g.restore();
-  }, [view, size, rasters, ortho, classCanvas, layers, routes, selectedRoute, targetId, region, marker, W, H]);
+  }, [view, size, rasters, orthoSrc, classCanvas, commCanvas, env, divertCells, layers, routes, selectedRoute, targetId, region, markers, W, H]);
 
   const toCell = (x: number, y: number) => (view ? { col: Math.floor((x - view.x) / view.scale), row: Math.floor((y - view.y) / view.scale) } : null);
 

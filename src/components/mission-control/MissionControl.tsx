@@ -1,24 +1,29 @@
 "use client";
 import { useEffect, useRef, useState } from "react";
 import { Loader2, PanelLeftClose, PanelLeftOpen } from "lucide-react";
-import { ProvenanceBadge } from "@/components/ProvenanceBadge";
-import { DEM_PROVENANCE } from "@/lib/data/targets";
+import { AppHeader, HEADER_H } from "@/components/AppHeader";
 import { usePlanner, useRegion } from "@/lib/useMissionData";
+import { useLive } from "@/lib/useLive";
+import { useMission } from "@/lib/store";
+import { EnvironmentPanel } from "./EnvironmentPanel";
 import { EvaConfig } from "./EvaConfig";
 import { LayerPanel } from "./LayerPanel";
 import { MapCanvas } from "./MapCanvas";
 import { PlannerPanel } from "./PlannerPanel";
 import { TargetPanel } from "./TargetPanel";
+import { TwinBar } from "./TwinBar";
+import { FieldLogList } from "./FieldLogList";
 
 const TABS = [
   { id: "layers", label: "Layers" },
   { id: "targets", label: "Targets" },
   { id: "eva", label: "EVA" },
+  { id: "env", label: "Environment" },
+  { id: "logs", label: "Field logs" },
 ] as const;
 type Tab = (typeof TABS)[number]["id"];
 
-const HEADER_H = 44;
-const SIDE_W = 340;
+const SIDE_W = 350;
 const GAP = 10;
 
 export function MissionControl() {
@@ -28,6 +33,10 @@ export function MissionControl() {
   const [sideOpen, setSideOpen] = useState(true);
   const plannerRef = useRef<HTMLDivElement>(null);
   const [plannerH, setPlannerH] = useState(260);
+  const live = useLive(region, planner.plan?.routes ?? null, planner.env, planner.divert, false);
+  const emergency = useMission((s) => s.emergency);
+  const clearEmergency = useMission((s) => s.clearEmergency);
+  const logCount = useMission((s) => s.logs.length);
 
   useEffect(() => {
     const el = plannerRef.current;
@@ -54,34 +63,32 @@ export function MissionControl() {
         region={region}
         classes={planner.plan?.classes ?? null}
         routes={planner.plan?.routes ?? null}
+        env={planner.env}
+        markers={live.markers}
+        divertCells={live.diversion?.plan.cells ?? null}
         inset={{ top: HEADER_H + GAP, right: GAP, bottom: plannerH + GAP * 2, left }}
       />
 
-      <header className="absolute inset-x-0 top-0 flex items-center gap-4 border-b border-line bg-space/92 px-4" style={{ height: HEADER_H }}>
-        <div className="flex items-baseline gap-2">
-          <span className="font-semibold tracking-wide">Mars Pathfinder</span>
-          <span className="text-muted">EVA planning</span>
+      <AppHeader />
+
+      {emergency && (
+        <div className="absolute left-1/2 z-10 -translate-x-1/2 rounded border border-critical/60 bg-space/95 px-3 py-1.5 text-[12px]" style={{ top: HEADER_H + GAP }}>
+          <span className="font-semibold text-critical">EMERGENCY · {emergency.kind === "solar" ? "solar particle event" : emergency.kind === "dust" ? "dust gust front" : "low O₂"}</span>
+          <span className="text-muted"> — crew diverting to {live.diversion ? `${live.diversion.destination}, ${(live.diversion.plan.eva?.totals.distanceM ?? 0).toFixed(0)} m` : "…"}</span>
+          <button onClick={clearEmergency} className="ml-3 text-muted underline-offset-2 hover:text-ink hover:underline">Clear</button>
         </div>
-        <span className="h-4 w-px bg-line" />
-        <nav className="flex items-center gap-4 text-[12px]">
-          <span className="border-b border-ink pb-0.5 text-ink">Mission Control</span>
-        </nav>
-        <div className="ml-auto flex items-center gap-2 text-[12px] text-muted">
-          <span>Jezero crater, western floor · 18.49°N 77.32°E</span>
-          <ProvenanceBadge p={DEM_PROVENANCE} />
-        </div>
-      </header>
+      )}
 
       {sideOpen ? (
         <aside className="panel absolute flex flex-col" style={{ top: HEADER_H + GAP, left: GAP, width: SIDE_W, bottom: GAP }}>
-          <div className="flex items-center border-b border-line px-1">
+          <div className="flex items-center overflow-x-auto border-b border-line px-1">
             {TABS.map((t) => (
               <button
                 key={t.id}
                 onClick={() => setTab(t.id)}
-                className={`px-3 py-2 text-[12px] ${tab === t.id ? "border-b border-ink text-ink" : "text-muted hover:text-ink"}`}
+                className={`shrink-0 px-2.5 py-2 text-[12px] ${tab === t.id ? "border-b border-ink text-ink" : "text-muted hover:text-ink"}`}
               >
-                {t.label}
+                {t.label}{t.id === "logs" && logCount > 0 && <span className="num ml-1 text-faint">{logCount}</span>}
               </button>
             ))}
             <button onClick={() => setSideOpen(false)} className="ml-auto p-2 text-muted hover:text-ink" aria-label="Collapse panel"><PanelLeftClose size={15} /></button>
@@ -90,20 +97,17 @@ export function MissionControl() {
             {tab === "layers" && <LayerPanel region={region} classShare={planner.plan?.classShare ?? null} />}
             {tab === "targets" && <TargetPanel />}
             {tab === "eva" && <EvaConfig />}
+            {tab === "env" && <EnvironmentPanel env={planner.env} route={live.route} />}
+            {tab === "logs" && <FieldLogList />}
           </div>
         </aside>
       ) : (
-        <button
-          onClick={() => setSideOpen(true)}
-          className="panel absolute p-2 text-muted hover:text-ink"
-          style={{ top: HEADER_H + GAP, left: GAP }}
-          aria-label="Open panel"
-        >
+        <button onClick={() => setSideOpen(true)} className="panel absolute p-2 text-muted hover:text-ink" style={{ top: HEADER_H + GAP, left: GAP }} aria-label="Open panel">
           <PanelLeftOpen size={15} />
         </button>
       )}
 
-      <div ref={plannerRef} className="absolute" style={{ left, right: GAP, bottom: GAP, maxHeight: "48vh" }}>
+      <div ref={plannerRef} className="absolute" style={{ left, right: GAP, bottom: GAP, maxHeight: "50vh" }}>
         {planner.error && <div className="panel mb-2 px-3 py-1.5 text-[12px] text-critical">Planner error: {planner.error}</div>}
         <PlannerPanel
           region={region}
@@ -112,6 +116,7 @@ export function MissionControl() {
           verification={planner.verification}
           verifying={planner.verifying}
           onVerify={planner.verify}
+          twinBar={<TwinBar snap={live.snap} />}
         />
       </div>
     </div>

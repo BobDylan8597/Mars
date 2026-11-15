@@ -135,3 +135,36 @@ export function verifyWithDijkstra(region: Region, t: TerrainModel, targetId: st
     return { key, astar, dijkstra, sameCost: Math.abs(astar.cost - dijkstra.cost) < 1e-6 * Math.max(1, astar.cost) };
   });
 }
+
+// ---------------------------------------------------------------- environment (Level 2)
+import { CoarseMask, findShelters, radioLineOfSight, Shelter } from "@/lib/core/los";
+
+export interface EnvironmentModel {
+  comm: CoarseMask;
+  /** % of walkable map in radio shadow */
+  blackoutPct: number;
+  shelters: Shelter[];
+  antenna: { col: number; row: number; heightM: number };
+}
+
+export function buildEnvironment(region: Region, t: TerrainModel, antennaH: number): EnvironmentModel {
+  const { col, row } = latLonToCell(region.meta, BASE_SITE.lat, BASE_SITE.lon);
+  const comm = radioLineOfSight(region.grid, col, row, antennaH, 2, 4);
+  let dark = 0, tot = 0;
+  for (let i = 0; i < comm.data.length; i++) { tot++; if (!comm.data[i]) dark++; }
+  const walkable = (i: number) => t.classes[i] !== TerrainClass.EXCLUDED && t.classes[i] !== TerrainClass.INSUFFICIENT_DATA;
+  const shelters = findShelters(region.grid, walkable, { step: 8, minBlocked: 0.1, spacingM: 250, max: 12 });
+  return { comm, blackoutPct: (dark / tot) * 100, shelters, antenna: { col, row, heightM: antennaH } };
+}
+
+export function commAt(env: EnvironmentModel, col: number, row: number): boolean {
+  const c = Math.floor(col / env.comm.step), r = Math.floor(row / env.comm.step);
+  if (c < 0 || r < 0 || c >= env.comm.width || r >= env.comm.height) return false;
+  return env.comm.data[r * env.comm.width + c] === 1;
+}
+
+/** Emergency diversion with the safest-route weights. */
+export function divert(region: Region, t: TerrainModel, fromCell: number, toCell: number, eva: EvaParams): RoutePlan {
+  const s = findPath(t.layers, fromCell, toCell, ROUTE_PROFILES.B.weights);
+  return describe(region, t, "B", s, eva, []);
+}

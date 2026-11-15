@@ -42,6 +42,34 @@ export const CLASS_COLORS: Record<number, [number, number, number, number]> = {
   [TerrainClass.INSUFFICIENT_DATA]: [120, 110, 150, 210],
 };
 
+/**
+ * Approximate Mars colour for a monochrome HiRISE RED-band image: maps brightness onto a
+ * dust/basalt palette. Visual aid only; it is NOT true colour and is labelled as such in the UI.
+ */
+export const MARS_TINT: [number, RGB][] = [
+  [0, [28, 16, 11]], [0.3, [96, 52, 30]], [0.55, [164, 98, 58]], [0.78, [208, 150, 102]], [1, [242, 214, 180]],
+];
+
+export function tintImage(src: HTMLImageElement): HTMLCanvasElement {
+  const c = document.createElement("canvas");
+  c.width = src.naturalWidth; c.height = src.naturalHeight;
+  const g = c.getContext("2d", { willReadFrequently: true })!;
+  g.drawImage(src, 0, 0);
+  const img = g.getImageData(0, 0, c.width, c.height);
+  const d = img.data;
+  const lut = new Uint8ClampedArray(256 * 3);
+  for (let v = 0; v < 256; v++) {
+    const [r, gg, b] = ramp(MARS_TINT, v / 255);
+    lut[v * 3] = r; lut[v * 3 + 1] = gg; lut[v * 3 + 2] = b;
+  }
+  for (let i = 0; i < d.length; i += 4) {
+    const v = d[i];
+    d[i] = lut[v * 3]; d[i + 1] = lut[v * 3 + 1]; d[i + 2] = lut[v * 3 + 2];
+  }
+  g.putImageData(img, 0, 0);
+  return c;
+}
+
 export function hillshade(region: Region): ImageData {
   const { width: w, height: h, cellSize: d, z } = region.grid;
   const az = (315 * Math.PI) / 180, alt = (45 * Math.PI) / 180;
